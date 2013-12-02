@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}grievance{% endblock %}
+
+{% block content %}
+<form action="" method="POST">
+{% csrf_token %}
+	<p>
+		{% if mId >= 0 or grievances.0.is_public %}
+			{% if mId >= 0 and member == grievanceAuthor and not grievance.0.is_closed_by_author %}
+				<h2>Let('s) sort(you)out: </h2><br />
+			{% endif %}
+			<span class="title">Title: {{ grievances.0.title }}</span><br />
+
+			<div id="main">
+			<table border="1" cellpadding="4" width="100%" class="tablesorter" >
+				<tr>
+		       	 	<td>Info.</td>
+		        	<td>Statement</td>
+		        	<td>Action</td>
+		    	</tr>
+		    
+		    	{% for grievance, solution, author in grisolaths %}
+		    		{% if grievance %}<!-- print yet another level grievance -->
+		    			<tr>
+		    				<td>
+		    					Grievance ({{ grievance.level }})<br />
+		    					{{ grievanceAuthor.user.username }}<br />
+		    					{{ grievance.creation_tstmp }}
+		    				</td>
+		        			<td>
+		        				{{ grievance.statement }}
+		        			</td>
+		        			<td>
+		        			</td>
+		    			</tr>
+		    		{% endif %}
+		    
+		    		{% if grievance.has_solution_finalized and solution.is_finalized%}<!-- print finalized solution -->
+		    			<tr>
+		    				<td>
+		    					Finalized Solution<br />
+		    					{% if solution.ath and author %}
+            						{{ author.user.username }}(expert)
+            					{% else %}
+            						{% if solution.vath and author %}
+            							{{ author.first_name }}
+            						{% endif %}	
+            					{% endif %}<br />
+		    					{{ solution.creation_tstmp }}
+		    				</td>
+		        			<td>
+		        				{{ solution.statement }}
+		        			</td>
+		        			<td>
+		        			</td>
+		    			</tr>
+		    
+		    			{% if solution.actual_outcome %}<!-- print actual outcome of the finalized solution -->
+		    				<tr>
+		    					<td>
+		    						Outcome<br />
+		    						{% if solution.ath and author %}
+            							{{ author.user.username }}(expert)
+            						{% else %}
+            							{% if solution.vath and author %}
+            								{{ author.first_name }}
+            							{% endif %}	
+            						{% endif %}<br />
+		    						{{ solution.creation_tstmp }}
+		    					</td>
+		        				<td>
+		        					{{ solution.actual_outcome }}
+		        				</td>
+		        				<td>
+		        				</td>
+		    				</tr>
+		    			{% endif %}
+            		{% else %}
+            			{% if grievance.has_solution_selected and solution.is_selected %}<!-- print selected solution -->
+            				<tr>
+		    					<td>
+		    						Selected Solution<br />
+		    						{% if solution.ath and author %}
+            							{{ author.user.username }}(expert)
+            						{% else %}
+            							{% if solution.vath and author %}
+            								{{ author.first_name }}
+            							{% endif %}	
+            						{% endif %}<br />
+		    						{{ solution.creation_tstmp }}
+		    					</td>
+		        				<td>
+		        					{{ solution.statement }}
+		        				</td>
+		        				<td>
+		        				</td>
+		    				</tr>
+		    				
+		    				{% if solution.expected_outcome %}<!-- print expected outcome of selected solution -->
+		    					<tr>
+		    						<td>
+		    							Expected Outcome<br />
+		    							{% if solution.ath and author %}
+            								{{ author.user.username }}(expert)
+            							{% else %}
+            								{% if solution.vath and author %}
+            									{{ author.first_name }}
+            								{% endif %}	
+            							{% endif %}<br />
+		    							{{ solution.creation_tstmp }}
+		    						</td>
+		        					<td>
+		        						{{ solution.expected_outcome }}
+		        					</td>
+		        					<td>
+		        					</td>
+		    					</tr>
+		    				{% endif %}
+		    				
+		    				{% if member == grievanceAuthor and not solution.actual_outcome %}<!-- owner can provide actual outcome, rating for the selected solution -->
+		    					<tr>
+		    						<td>
+		    							Actual Outcome<br />
+		    						</td>
+		        					<td>
+		        						<!-- input for actual outcome -->
+        								{{ fbkform.actual_outcome.errors }}
+        								{{ fbkform.actual_outcome }}
+		        					</td>
+		        					<td>
+		        						<!-- input for satisfaction rating -->
+        								{{ fbkform.status.errors }}
+        								{% for radio in fbkform.status %}
+											{{ radio.choice_label }}
+											{{ radio.tag }}<br />
+										{% endfor %}
+										<input type="submit" value="submit" name="keypress" />
+		        					</td>
+		    					</tr>
+		    				{% else %}<!-- for others, print the actual outcome of the selected solution -->
+		    					{% if solution.actual_outcome %}
+		    						<tr>
+		    							<td>
+		    								Actual Outcome<br />
+		    							</td>
+		        						<td>
+		        							{{ solution.actual_outcome }}
+		        						</td>
+		        						<td>
+		        						</td>
+		    						</tr>
+		    					{% endif %}
+		    				{% endif %}
+            			{% else %}
+            				{% if solution %}<!-- print outstanding solution -->
+            					<tr>
+		    						<td>
+		    							Solution<br />
+		    							{% if solution.ath and author %}
+            								{{ author.user.username }}(expert)
+            							{% else %}
+            								{% if solution.vath and author %}
+            									{{ author.first_name }}
+            								{% endif %}	
+            							{% endif %}<br />
+		    							{{ solution.creation_tstmp }}
+		    						</td>
+		        					<td>
+		        						{{ solution.statement }}
+		        					</td>
+		        					<td>
+		        						{% if member == grievanceAuthor and not solutionIsSelected %}
+		        							<a class="button" href="{% url 'members.views.grievance_view' grievances.0.pk solution.pk%}">select</a>
+		        						{% endif %}
+		        					</td>
+		    					</tr>
+		    				
+		    					{% if solution.expected_outcome %}<!-- print expected outcome of the outstanding solution -->
+		    						<tr>
+		    							<td>
+		    								Expected Outcome<br />
+		    								{% if solution.ath and author %}
+            									{{ author.user.username }}(expert)
+            								{% else %}
+            									{% if solution.vath and author %}
+            										{{ author.first_name }}
+            									{% endif %}	
+            								{% endif %}<br />
+		    								{{ solution.creation_tstmp }}
+		    							</td>
+		        						<td>
+		        							{{ solution.expected_outcome }}
+		        						</td>
+		        						<td>
+		        						</td>
+		    						</tr>
+		    					{% endif %}
+		    				{% endif %}
+            			{% endif %}
+            		{% endif %}
+            	{% endfor %}
+            
+            	{% if member == grievances.0.ath %} <!-- bad fix: visibility needs to be controlled from front-end -->
+    				{% if canBeClosed %}
+    					<tr>
+		    				<td>
+		    					Revised Description
+		    				</td>
+		        			<td>
+		        				{{ form.statement.errors }}
+		        				{{ form.statement }}
+		        			</td>
+		        			<td>
+		        				<input type="submit" value="submitrevisedgrievance" name="keypress" /><br />
+    							<input type="submit" value="closegrievance" name="keypress" />
+		        			</td>
+		    			</tr>
+		    		{% endif %}
+		    		<!-- submit button here -->
+    			{% else %}
+    				{% if grievances.0.is_open %}
+    				<!-- may be some condition here -->
+    				<tr>
+		    			<td>
+		    				{% if mId == -1 %}
+        						{{ visitorForm.first_name.errors }}
+        						<label for="id_first_name">First Name:</label>
+        						{{ visitorForm.first_name }}<br />
+
+        						{{ visitorForm.last_name.errors }}
+        						<label for="id_last_name">Last Name:</label>
+        						{{ visitorForm.last_name }}<br />
+        			
+        						{{ visitorForm.email.errors }}
+        						<label for="id_email">Email Address:</label>
+        						{{ visitorForm.email }}<br />
+        			
+        						{{ visitorForm.phone_no.errors }}
+        						<label for="id_phone_no">Contact Number:</label>
+        						{{ visitorForm.phone_no }}
+    						{% endif %}
+		    			</td>
+		        		<td>
+		        			{{ form.non_field_errors }}
+        					{{ form.statement.errors }}
+        					<label for="id_statement">Solution:</label>
+        					{{ form.statement }}<br />
+        			
+        					{{ form.expected_outcome.errors }}
+        					<label for="id_expected_outcome">Expected Outcome:</label>
+        					{{ form.expected_outcome }}
+		        		</td>
+		        		<td>
+		        			<input type="submit" value="submitnewsolution" name="keypress" />
+		        		</td>
+		    		</tr>
+    				{% endif %}
+    			{% endif %}
+			</table>
+			</div>
+		{% endif %}
+	</p>
+</form>
+{% endblock %}

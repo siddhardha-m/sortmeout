@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}new grievance{% endblock %}
+
+{% block content %}
+<form action="" method="POST">
+{% csrf_token %}
+	<p>
+		<h2>Let('s) sort(you)out: </h2><br />
+		
+		{{ form1.non_field_errors }}
+		{{ form2.non_field_errors }}
+		
+        {{ form1.title.errors }}
+        <label for="id_title">Title:</label>
+        {{ form1.title }}<br />
+
+        {{ form1.statement.errors }}
+        <label for="id_statement">Description:</label>
+        {{ form1.statement }}<br />
+
+        {{ form2.category.errors }}
+        <label for="id_categories">Categories:</label>
+        {{ form2.category }}<br />
+        
+        <ul id="lookup-results">
+    	</ul>
+
+        {{ form1.status.errors }}
+        <label for="id_visibility">Visibility:</label>
+        {% for radio in form1.status %}
+			{{ radio.choice_label }}
+			{{ radio.tag }}
+		{% endfor %}
+
+    	<input type="submit" value="submitnewgrievance" name="keypress" />
+	</p>
+</form>
+{% endblock %}

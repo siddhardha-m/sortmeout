@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8" />
+
+<title >{% block title %}{% endblock %}</title>
+<link rel="stylesheet" type="text/css" href= "{% static "assets/css/base.css" %}" />
+
+<script src="{% static "assets/js/jquery-2.0.0.min.js" %}" ></script>
+<script src="{% static "assets/js/ajax.js" %}" ></script>
+
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+	<div class="first">
+		<div class="site_title">
+			sortmeout
+		</div>
+	
+		<div id="templatemo_menu" class="ddsmoothmenu" align="right">
+    		<ul>
+    			{% if mId >= 0 %}
+      				<li><a href="{% url 'members.views.all_grievances_view' 'private_forum' %}" class="selected">My Forum</a></li>
+      				<li><a href="{% url 'members.views.all_grievances_view' 'public_forum' %}">Public Forum</a></li>
+      				
+      				{% if member.is_expert %}
+      					<li><a href="{% url 'members.views.all_grievances_view' 'private_forum' %}">My Forum</a></li>
+      					<li><a href="{% url 'members.views.all_grievances_view' 'expert_forum' %}" class="selected">Expert Forum</a></li>
+      					<li><a href="{% url 'members.views.all_grievances_view' 'public_forum' %}">Public Forum</a></li>
+      				{% endif %}
+      			{% else %}
+      				<li><a href="{% url 'members.views.all_grievances_view' 'public_forum' %}" class="selected">Public Forum</a></li>
+      			{% endif %}
+    		</ul>
+    		
+    		{% if mId < 0 %}
+    			<button class="buttonstyle" type="button"><a href="{% url 'sortmeout.views.login_view' %}">log(me)in</a></button>
+			{% else %}
+				<button class="buttonstyle" type="button"><a href="{% url 'sortmeout.views.logout_view'%}">log(me)out</a></button>
+			{% endif %}
+  		</div>
+	</div>
+	
+	{% if errors %}
+     	<ul>
+         	{% for error in errors %}
+         	<li>{{ error }}</li>
+         	{% endfor %}
+     	</ul>
+	{% endif %}
+	
+	{% block content %}{% endblock %} 
+	
+	{% block footer %}
+		<hr>
+		<div id="templatemo_footer"> Copyright © sortmeout will never disclose any information you share here, 
+		including your username, with any person, party or organization not authorized to work on your request on our behalf.</div>
+	{% endblock %}
+</body>
+</html>

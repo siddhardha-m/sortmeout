@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}grievance list{% endblock %}
+
+{% block content %}
+<form action="" method="POST">
+{% csrf_token %}
+	{{ form.non_field_errors }}
+    {{ form.srchStr.errors }}
+    <label for="id_srchstr">Looking for:</label>
+    {{ form.srchStr }}<br />
+    		
+    {{ form.category.errors }}
+    <label for="id_category">In categories:</label>
+    {{ form.category }}<br />
+        
+    <ul id="lookup-results">
+    </ul>
+        
+    <input type="submit" value="search" name="keypress" /><br />
+    
+    {% if mId >= 0 %}
+		{% if member.is_member or member.is_expert %}
+			<a id="new_grievance" class="buttont" href="{% url 'members.views.post_new_grievance_view' %}">can someone sort(me)out !!!</a>
+		{% endif %}
+	{% endif %}
+
+	<p>
+		<h2>List of Grievances: </h2><br />
+		<!-- <br /><br /> -->
+		
+		<div id="main">
+		<table border="1" cellpadding="4" width="100%" class="tablesorter" >
+			<thead>
+			<tr>
+		        <td>Grievance</td>
+		        <td>Category(ies)</td>
+		        {% if mId >= 0 and member.is_expert %}
+		        	<td>Author</td>
+		        {% endif %}
+				<td>Created On</td>
+		        <td></td>
+		    </tr>
+			</thead>
+			
+			<tbody>
+			{% for grievance in grievances %}
+			<tr>
+				<td {% if forloop.last %}class="last"{% endif %}>
+					<div class="title"> 
+						{% load url from future %}
+						<a href="{% url 'members.views.grievance_view' grievance.pk 0 %}">{{ grievance.title }}</a>
+            		</div>
+				</td>
+				
+				<td {% if forloop.last %}class="last"{% endif %}>
+					<!-- <div class="griscats">  -->
+						{% for griscat in griscats %}
+							{% if griscat.gr == grievance %}
+								{% for category in categories %}
+									{% if category == griscat.cat %}
+										{{ category.name }},
+									{% endif %}
+								{% endfor %}
+							{% endif %}
+						{% endfor %}
+					<!-- </div> -->
+				</td>
+				
+				{% if mId >= 0 and member.is_expert %}
+		        	<td {% if forloop.last %}class="last"{% endif %}>
+		        		{% for grievanceAuthor in grievanceAuthors %}
+            				{% if grievance.ath == grievanceAuthor.pk %}
+            					{{ grievanceAuthor.user.username }}
+            				{% endif %}
+            			{% endfor %}</td>
+		        {% endif %}
+				
+				<td {% if forloop.last %}class="last"{% endif %}>{{ grievance.creation_tstmp|linebreaksbr }}</td>
+			</tr>
+			</tbody>
+			{% endfor %}
+		</table>
+		
+		<!-- Next/Prev page links  -->
+        {% if grievances.object_list and grievances.paginator.num_pages > 1 %}
+        <div class="pagination">
+            <span class="step-links">
+                {% if grievances.has_previous %}
+                    <a href= "?page={{ grievances.previous_page_number }}">&lt;</a>
+                {% endif %}
+
+                <span class="current">
+                    &nbsp;Page {{ grievances.number }} of {{ grievances.paginator.num_pages }}
+                </span>
+
+                {% if grievances.has_next %}
+                    <a href="?page={{ grievances.next_page_number }}">&gt;</a>
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+		</div>
+{% endblock %}

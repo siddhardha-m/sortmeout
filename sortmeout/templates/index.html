@@ -1,0 +1,26 @@
+{% extends "base.html" %} 
+
+{% block title %}sortmeout member login
+
+{%endblock %} {% block content %}
+<form action="" method="POST">
+{% csrf_token %}
+	<p>
+		<h2>(Me)mber Login: </h2><br /> 
+    	{{ form.non_field_errors }}
+        	
+        {{ form.username.errors }}
+        <label for="id_username">(Me)username:</label>
+        {{ form.username }}<br />
+        	
+        {{ form.password.errors }}
+        <label for="id_password">(Me)password:</label>
+        {{ form.password }}
+    	
+    	<p>
+			<input type="submit" value="logmein" name="keypress" />
+			<input type="submit" value="signmeup" name="keypress" />
+		</p>
+	</p>
+</form>
+{% endblock %}
