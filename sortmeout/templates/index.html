@@ -6,20 +6,29 @@
 <form action="" method="POST">
 {% csrf_token %}
 	<p>
-		<h2>(Me)mber Login: </h2><br /> 
+		<h2>(Me)mber Login: </h2>
     	{{ form.non_field_errors }}
-        	
-        {{ form.username.errors }}
-        <label for="id_username">(Me)username:</label>
-        {{ form.username }}<br />
-        	
-        {{ form.password.errors }}
-        <label for="id_password">(Me)password:</label>
-        {{ form.password }}
-    	
+
+
+		<table border="0">
+		  	<tr>
+		    	<td width="20px"><label for="id_username">(Me)username</label></td>
+		    	<td width="5px">:</td>
+		    	<td >{{ form.username }}</td>
+		    	<td >{{ form.username.errors }}</td>
+	      	</tr>
+		  
+		  	<tr>
+		    	<td><label for="id_password">(Me)password</label></td>
+		    	<td>:</td>
+		    	<td>{{ form.password }}</td>
+		    	<td>{{ form.password.errors }}</td>
+	      	</tr>
+  		</table>
+	
     	<p>
-			<input type="submit" value="logmein" name="keypress" />
-			<input type="submit" value="signmeup" name="keypress" />
+			<input  class="buttons" type="submit" value="log(me)in" name="keypress" />
+			<input  class="buttons" type="submit" value="sign(me)up" name="keypress" />
 		</p>
 	</p>
 </form>

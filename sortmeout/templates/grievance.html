@@ -9,21 +9,19 @@
 	<p>
 		{% if mId >= 0 or grievances.0.is_public %}
 			{% if mId >= 0 and member == grievanceAuthor and not grievance.0.is_closed_by_author %}
-				<h2>Let('s) sort(you)out: </h2><br />
+				<h2>Let('s) sort(you)out: </h2>
 			{% endif %}
-			<span class="title">Title: {{ grievances.0.title }}</span><br />
-
-			<div id="main">
-			<table border="1" cellpadding="4" width="100%" class="tablesorter" >
+			<span class="title"><h2>Title: {{ grievances.0.title }}</h2></span>
+			<table border="1" cellpadding="4" width="100%" class="tablesorter" id="rounded-corner-grv" >
 				<tr>
-		       	 	<td>Info.</td>
-		        	<td>Statement</td>
-		        	<td>Action</td>
+		       	 	<th width="15%" scope="col" >Info.</th>
+		        	<th width="70%" scope="col" >Statement</th>
+		        	<th width="15%" scope="col" >Action</th>
 		    	</tr>
 		    
 		    	{% for grievance, solution, author in grisolaths %}
 		    		{% if grievance %}<!-- print yet another level grievance -->
-		    			<tr>
+		    			<tr class="grievance">
 		    				<td>
 		    					Grievance ({{ grievance.level }})<br />
 		    					{{ grievanceAuthor.user.username }}<br />
@@ -37,15 +35,23 @@
 		    			</tr>
 		    		{% endif %}
 		    
-		    		{% if grievance.has_solution_finalized and solution.is_finalized%}<!-- print finalized solution -->
-		    			<tr>
+		    		{% if solution.is_finalized%}<!-- print finalized solution --><!-- grievance.has_solution_finalized and  -->
+		    			<tr><!-- grouping finalized solution elements -->
+		    			<tr class="finalized-sl">
 		    				<td>
 		    					Finalized Solution<br />
 		    					{% if solution.ath and author %}
-            						{{ author.user.username }}(expert)
+            						{{ author.user.username }}
+            						{% if author.is_expert %}
+            							(expert)
+            						{% else %}
+            							{% if author.is_member %}
+            								(member)
+            							{% endif %}
+            						{% endif %}
             					{% else %}
             						{% if solution.vath and author %}
-            							{{ author.first_name }}
+            							{{ author.first_name }}(visitor)
             						{% endif %}	
             					{% endif %}<br />
 		    					{{ solution.creation_tstmp }}
@@ -58,14 +64,21 @@
 		    			</tr>
 		    
 		    			{% if solution.actual_outcome %}<!-- print actual outcome of the finalized solution -->
-		    				<tr>
+		    				<tr class="actual-outcome">
 		    					<td>
 		    						Outcome<br />
 		    						{% if solution.ath and author %}
-            							{{ author.user.username }}(expert)
+            							{{ author.user.username }}
+            							{% if author.is_expert %}
+            								(expert)
+            							{% else %}
+            								{% if author.is_member %}
+            									(member)
+            								{% endif %}
+            							{% endif %}
             						{% else %}
             							{% if solution.vath and author %}
-            								{{ author.first_name }}
+            								{{ author.first_name }}(visitor)
             							{% endif %}	
             						{% endif %}<br />
 		    						{{ solution.creation_tstmp }}
@@ -77,16 +90,25 @@
 		        				</td>
 		    				</tr>
 		    			{% endif %}
+		    			</tr>
             		{% else %}
-            			{% if grievance.has_solution_selected and solution.is_selected %}<!-- print selected solution -->
-            				<tr>
+            			{% if solution.is_selected %}<!-- print selected solution --><!-- grievance.has_solution_selected and -->
+            				<tr><!-- grouping selected solution elements -->
+            				<tr class="selected-sl">
 		    					<td>
 		    						Selected Solution<br />
 		    						{% if solution.ath and author %}
-            							{{ author.user.username }}(expert)
+            							{{ author.user.username }}
+            							{% if author.is_expert %}
+            								(expert)
+            							{% else %}
+            								{% if author.is_member %}
+            									(member)
+            								{% endif %}
+            							{% endif %}
             						{% else %}
             							{% if solution.vath and author %}
-            								{{ author.first_name }}
+            								{{ author.first_name }}(visitor)
             							{% endif %}	
             						{% endif %}<br />
 		    						{{ solution.creation_tstmp }}
@@ -99,14 +121,21 @@
 		    				</tr>
 		    				
 		    				{% if solution.expected_outcome %}<!-- print expected outcome of selected solution -->
-		    					<tr>
+		    					<tr class="expected-outcome">
 		    						<td>
 		    							Expected Outcome<br />
 		    							{% if solution.ath and author %}
-            								{{ author.user.username }}(expert)
+            								{{ author.user.username }}
+            								{% if author.is_expert %}
+            									(expert)
+            								{% else %}
+            									{% if author.is_member %}
+            										(member)
+            									{% endif %}
+            								{% endif %}
             							{% else %}
             								{% if solution.vath and author %}
-            									{{ author.first_name }}
+            									{{ author.first_name }}(visitor)
             								{% endif %}	
             							{% endif %}<br />
 		    							{{ solution.creation_tstmp }}
@@ -120,7 +149,7 @@
 		    				{% endif %}
 		    				
 		    				{% if member == grievanceAuthor and not solution.actual_outcome %}<!-- owner can provide actual outcome, rating for the selected solution -->
-		    					<tr>
+		    					<tr class="actual-outcome">
 		    						<td>
 		    							Actual Outcome<br />
 		    						</td>
@@ -136,12 +165,12 @@
 											{{ radio.choice_label }}
 											{{ radio.tag }}<br />
 										{% endfor %}
-										<input type="submit" value="submit" name="keypress" />
+										<input type="submit" value="submitoutcome" name="keypress" />
 		        					</td>
 		    					</tr>
 		    				{% else %}<!-- for others, print the actual outcome of the selected solution -->
 		    					{% if solution.actual_outcome %}
-		    						<tr>
+		    						<tr class="actual-outcome">
 		    							<td>
 		    								Actual Outcome<br />
 		    							</td>
@@ -153,16 +182,25 @@
 		    						</tr>
 		    					{% endif %}
 		    				{% endif %}
+		    				</tr>
             			{% else %}
             				{% if solution %}<!-- print outstanding solution -->
-            					<tr>
+            					<tr><!-- grouping solution elements -->
+            					<tr class="solution">
 		    						<td>
 		    							Solution<br />
 		    							{% if solution.ath and author %}
-            								{{ author.user.username }}(expert)
+            								{{ author.user.username }}
+            								{% if author.is_expert %}
+            									(expert)
+            								{% else %}
+            									{% if author.is_member %}
+            										(member)
+            									{% endif %}
+            								{% endif %}
             							{% else %}
             								{% if solution.vath and author %}
-            									{{ author.first_name }}
+            									{{ author.first_name }}(visitor)
             								{% endif %}	
             							{% endif %}<br />
 		    							{{ solution.creation_tstmp }}
@@ -171,21 +209,28 @@
 		        						{{ solution.statement }}
 		        					</td>
 		        					<td>
-		        						{% if member == grievanceAuthor and not solutionIsSelected %}
+		        						{% if member == grievanceAuthor and not solutionIsSelected and not solution.is_rated %}
 		        							<a class="button" href="{% url 'members.views.grievance_view' grievances.0.pk solution.pk%}">select</a>
 		        						{% endif %}
 		        					</td>
 		    					</tr>
 		    				
 		    					{% if solution.expected_outcome %}<!-- print expected outcome of the outstanding solution -->
-		    						<tr>
+		    						<tr class="expected-outcome">
 		    							<td>
 		    								Expected Outcome<br />
 		    								{% if solution.ath and author %}
-            									{{ author.user.username }}(expert)
+            									{{ author.user.username }}
+            									{% if author.is_expert %}
+            										(expert)
+            									{% else %}
+            										{% if author.is_member %}
+            											(member)
+            										{% endif %}
+            									{% endif %}
             								{% else %}
             									{% if solution.vath and author %}
-            										{{ author.first_name }}
+            										{{ author.first_name }}(visitor)
             									{% endif %}	
             								{% endif %}<br />
 		    								{{ solution.creation_tstmp }}
@@ -197,6 +242,7 @@
 		        						</td>
 		    						</tr>
 		    					{% endif %}
+		    					</tr>
 		    				{% endif %}
             			{% endif %}
             		{% endif %}
@@ -222,7 +268,7 @@
     			{% else %}
     				{% if grievances.0.is_open %}
     				<!-- may be some condition here -->
-    				<tr>
+    				<tr class="select-a-sol">
 		    			<td>
 		    				{% if mId == -1 %}
         						{{ visitorForm.first_name.errors }}
@@ -245,21 +291,20 @@
 		        		<td>
 		        			{{ form.non_field_errors }}
         					{{ form.statement.errors }}
-        					<label for="id_statement">Solution:</label>
+        					<label for="id_statement"><p>Solution:</p></label>
         					{{ form.statement }}<br />
         			
         					{{ form.expected_outcome.errors }}
-        					<label for="id_expected_outcome">Expected Outcome:</label>
+        					<label for="id_expected_outcome"><p>Expected Outcome:</p></label>
         					{{ form.expected_outcome }}
 		        		</td>
 		        		<td>
-		        			<input type="submit" value="submitnewsolution" name="keypress" />
+		        			<input type="submit" class="buttons" value="submitnewsolution" name="keypress" />
 		        		</td>
 		    		</tr>
     				{% endif %}
     			{% endif %}
 			</table>
-			</div>
 		{% endif %}
 	</p>
 </form>

@@ -7,67 +7,110 @@
 {% csrf_token %}
 	<p>
 		{% if signuptype == 'member' %}
-			<h2>New (Me)mber Signup: </h2><br />
-			<a href="{% url 'members.views.signup_view' 'expert'%}">switch to expert signup</a>
+			<h2>New (Me)mber Signup: </h2>
+			<button class="buttons" type="button"><a href="{% url 'members.views.signup_view' 'expert'%}" class="nodec">switch to expert signup</a></button>
 		{% else %}{% if signuptype == 'expert' %}
-				<h2>New Expert (Me)mber Signup: </h2><br />
-				<a href="{% url 'members.views.signup_view' 'member'%}">switch to member signup</a>
+				<h2>New Expert (Me)mber Signup: </h2>
+				<button class="buttons" type="button"><a href="{% url 'members.views.signup_view' 'member'%}" class="nodec">switch to member signup</a></button>
 			{% endif %}
-		{%endif %}<br />
+		{%endif %}
 		
 		{{ form1.non_field_errors }}
 		{{ form2.non_field_errors }}
 		
-        {{ form2.first_name.errors }}
-        <label for="id_firstname">First Name:</label>
-        {{ form2.first_name }}<br />
-        	
-        {{ form2.last_name.errors }}
-        <label for="id_lastname">Last Name:</label>
-        {{ form2.last_name }}<br />
+		<table width="100%" border="0">
+  			<tr>
+    			<td width="11%"><label for="id_firstname">First Name *</label></td>
+    			<td width="1%" >:</td>
+    			<td width="21%">{{ form2.first_name }}</td>
+    			<td width="67%">{{ form2.first_name.errors }}</td>
+  			</tr>
 
-        {{ form1.dob.errors }}
-        <label for="id_dob">Birth Date:</label>
-        {{ form1.dob }}<br />
+ 			<tr>
+    			<td><label for="id_lastname">Last Name</label></td>
+    			<td>:</td>
+    			<td>{{ form2.last_name }}</td>
+			    <td>{{ form2.last_name.errors }}</td>
+ 			</tr>
+  
+  			<tr>
+    			<td><label for="id_dob">Birth Date *</label></td>
+    			<td>:</td>
+    			<td>{{ form1.dob }}</td>
+    			<td>{{ form1.dob.errors }}</td>
+  			</tr>
+  			
+  			<tr>
+    			<td><label for="id_address">Address *</label></td>
+    			<td>:</td>
+    			<td>{{ form1.address }}</td>
+    			<td>{{ form1.address.errors }}</td>
+  			</tr>
+  			
+  			<tr>
+    			<td><label for="id_email">Email Address *</label></td>
+    			<td>:</td>
+    			<td>{{ form2.email }}</td>
+    			<td>{{ form2.email.errors }}</td>
+  			</tr>
+  			
+  			<tr>
+    			<td><label for="id_phone_no">Contact Number</label></td>
+    			<td>:</td>
+    			<td>{{ form1.phone_no }}</td>
+    			<td>{{ form1.phone_no.errors }}</td>
+  			</tr>
+  
+    		{% if signuptype == 'expert' %}
+    			<tr>
+    				<td><label for="id_designation">Designation</label></td>
+    				<td>:</td>
+    				<td>{{ form1.designation }}</td>
+    				<td>{{ form1.designation.errors }}</td>
+  				</tr>
+  				
+  				
+  				<tr>
+    				<td><label for="id_category">Categories *</label></td>
+    				<td>:</td>
+    				<td>{{ form3.category }}</td>
+    				<td>{{ form3.category.errors }}</td>
+  				</tr>
+  				
+  				<tr>
+    				<td></td>
+    				<td></td>
+    				<td>
+    					<ul id="lookup-results" style="list-style-type: none;"></ul>
+    					<ul id="expertise-level-choices" style="list-style-type: none;"></ul>
+					</td>
+    				<td></td>
+  				</tr>
+			{% endif %}
+  
+  			<tr>
+    			<td><label for="id_username">Username (for login) *</label></td>
+    			<td>:</td>
+    			<td>{{ form2.username }}</td>
+    			<td>{{ form2.username.errors }}</td>
+  			</tr>
+  			
+  			<tr>
+    			<td><label for="id_password">Password (for login) *</label></td>
+    			<td>:</td>
+    			<td>{{ form2.password }}</td>
+    			<td>{{ form2.password.errors }}</td>
+  			</tr>
+  			
+  			<tr>
+    			<td><label for="id_repassword">Confirm Password *</label></td>
+    			<td>:</td>
+    			<td>{{ form2.repassword }}</td>
+    			<td>{{ form2.repassword.errors }}</td>
+  			</tr>
+		</table>
 
-        {{ form1.address.errors }}
-        <label for="id_address">Address:</label>
-        {{ form1.address }}<br />
-
-        {{ form2.email.errors }}
-        <label for="id_email">Email Address:</label>
-        {{ form2.email }}<br />
-
-        {{ form1.phone_no.errors }}
-        <label for="id_phone_no">Contact Number:</label>
-        {{ form1.phone_no }}<br />
-    	
-    	{% if signuptype == 'expert' %}
-        	{{ form1.designation.errors }}
-        	<label for="id_designation">Designation:</label>
-        	{{ form1.designation }}<br />
-
-        	{{ form3.category.errors }}
-        	<label for="id_category">Categories:</label>
-        	{{ form3.category }}<br />
-        	
-        	<ul id="lookup-results">
-    		</ul>
-		{% endif %}
-    	
-        {{ form2.username.errors }}
-        <label for="id_username">Username (for login):</label>
-        {{ form2.username }}<br />
-
-        {{ form2.password.errors }}
-        <label for="id_password">Password (for login):</label>
-        {{ form2.password }}<br />
-
-        {{ form2.repassword.errors }}
-        <label for="id_repassword">Confirm Password:</label>
-        {{ form2.repassword }}<br />
-
-		<p><input type="submit" value="signmeup" name="keypress" /></p>
+		<p><input type="submit" value="sign(me)up" name="keypress" class="buttons" /></p>
 	</p>
 </form>
 {% endblock %}

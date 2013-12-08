@@ -3,15 +3,15 @@ Created on Nov 25, 2013
 
 @author: Rohit
 '''
-from members.models import Grievance, Griscat, Expertise,\
-    Category, Catkeys, Solution
-
+##################################################################################################################
+from members.models import Grievance, Griscat, Expertise, Category, Catkeys, Solution
 from django.core.context_processors import csrf
 from django.core.paginator import Paginator, InvalidPage, EmptyPage
 from django.http.response import HttpResponseRedirect
 from django.db.models import Q
 import re
 
+##################################################################################################################
 def requires_login(view):
     def new_view(request, *args, **kwargs):
         if not request.user.is_authenticated():
@@ -19,6 +19,7 @@ def requires_login(view):
         return view(request, *args, **kwargs)
     return new_view
 
+##################################################################################################################
 def add_csrf(request, ** kwargs):
 #     try:
 #         del request.session['keypress']
@@ -28,6 +29,7 @@ def add_csrf(request, ** kwargs):
     d.update(csrf(request))
     return d
 
+##################################################################################################################
 def mk_paginator(request, items, num_items):
     if items is None:
         return None
@@ -45,6 +47,7 @@ def mk_paginator(request, items, num_items):
         items = paginator.page(paginator.num_pages)
     return items
 
+##################################################################################################################
 def extract_categories_from_string(commaStr):
     pattern = re.compile('\s*,\s*')
     categoryNames = pattern.split(commaStr)
@@ -52,6 +55,7 @@ def extract_categories_from_string(commaStr):
     
     return categories
 
+##################################################################################################################
 # Algorithm: get_grievances
 # scope ...
 # case 0: public forum
@@ -64,7 +68,7 @@ def extract_categories_from_string(commaStr):
 # case 2: string search (without category)          => relevance-rank grievances on searchString
 # case 3: string search, with category              => relevance-rank catkeys on searchString
 #                                                   => then relevance rank grievances on catkeys+searchString
-
+##################################################################################################################
 def get_grievances(scope, searchString, categories, mId, member):
         
     isStringSearch = False
@@ -87,22 +91,22 @@ def get_grievances(scope, searchString, categories, mId, member):
     if scope == 0:
         # no search
         if (not isCategorySearch) and (not isStringSearch):
-            return Grievance.objects.extra(where=["status & 16 = 0"]).order_by("-creation_tstmp")#.filter(level=0)
+            return Grievance.objects.extra(where=["status & 16 = 0"]).filter(level=0).order_by("-creation_tstmp")
         
         # category search
         elif isCategorySearch and (not isStringSearch):
-            return Grievance.objects.extra(where=["status & 16 = 0"]).filter(cats__in=categories).order_by("-creation_tstmp").distinct()
+            return Grievance.objects.extra(where=["status & 16 = 0"]).filter(cats__in=categories, level=0).order_by("-creation_tstmp").distinct()
         
         # string search
         elif isStringSearch and (not isCategorySearch):
-            return Grievance.objects.search(searchString).extra(where=["status & 16 = 0"])
+            return Grievance.objects.search(searchString).extra(where=["status & 16 = 0"]).filter(level=0)
         
         # category based string search
         else:                       
-            grievances = list(Grievance.objects.search(searchString).extra(where=["status & 16 = 0"]))
+            grievances = list(Grievance.objects.search(searchString).extra(where=["status & 16 = 0"])).filter(level=0)
             if (keys is not None) and (len(keys) > 0):
                 for key in keys:
-                    tempGrievances = list(Grievance.objects.search(key).extra(where=["status & 16 = 0"]))
+                    tempGrievances = list(Grievance.objects.search(key).extra(where=["status & 16 = 0"])).filter(level=0)
                     for tempGrievance in tempGrievances:
                         grievanceSet = set(grievances)
                         if not tempGrievance in grievanceSet:
@@ -116,22 +120,22 @@ def get_grievances(scope, searchString, categories, mId, member):
     elif scope == 1:
         # no search
         if (not isCategorySearch) and (not isStringSearch):
-            return Grievance.objects.filter(ath=mId).order_by("-creation_tstmp")
+            return Grievance.objects.filter(ath=mId, level=0).order_by("-creation_tstmp")
         
         # category search
         elif isCategorySearch and (not isStringSearch):
-            return Grievance.objects.filter(ath=mId, cats__in=categories).order_by("-creation_tstmp").distinct()
+            return Grievance.objects.filter(ath=mId, cats__in=categories, level=0).order_by("-creation_tstmp").distinct()
 
         # string search
         elif isStringSearch and (not isCategorySearch):
-            return Grievance.objects.search(searchString).filter(ath=mId).order_by("-creation_tstmp")
+            return Grievance.objects.search(searchString).filter(ath=mId, level=0)
         
         # category based string search
         else:            
-            grievances = list(Grievance.objects.search(searchString).extra(where=["status & 16 = 0"]).filter(ath=mId))
+            grievances = list(Grievance.objects.search(searchString).extra(where=["status & 16 = 0"]).filter(ath=mId, level=0))
             if (keys is not None) and (len(keys) > 0):
                 for key in keys:
-                    tempGrievances = list(Grievance.objects.search(key).extra(where=["status & 16 = 0"]).filter(ath=mId))
+                    tempGrievances = list(Grievance.objects.search(key).extra(where=["status & 16 = 0"]).filter(ath=mId, level=0))
                     for tempGrievance in tempGrievances:
                         grievanceSet = set(grievances)
                         if not tempGrievance in grievanceSet:
@@ -143,42 +147,57 @@ def get_grievances(scope, searchString, categories, mId, member):
         
     # expert forum
     elif scope == 2:
-        expertises = Expertise.objects.filter(ex=member.user.id).order_by("-level")
+        expertises = Expertise.objects.filter(ex=member).order_by("-level")
         
+        maxRelevantExpertiseLevel = 0
+        relevantExpertises=[]
         relevantCategories=[]
         if not isCategorySearch:
+            relevantExpertises = expertises
             relevantCategories = expertises.values_list('cat', flat=True)
+            
+            for expertise in expertises:
+                if maxRelevantExpertiseLevel < expertise.level:
+                    maxRelevantExpertiseLevel = expertise.level
+            
         else:
             for expertise in expertises:
-                categoryIdSet = set(categories.pk)
-                if expertise.cat in categoryIdSet:
+                categorySet = set(categories)
+                if expertise.cat in categorySet:
+                    relevantExpertises.append(expertise)
                     relevantCategories.append(expertise.cat)
-                
+                    
+                    if maxRelevantExpertiseLevel < expertise.level:
+                        maxRelevantExpertiseLevel = expertise.level
+        
+        relevantExpertiseClause = "(status & 224) <= " + str(32 * maxRelevantExpertiseLevel)        
 #                 for category in categories:
 #                     if expertise.cat == category.pk:
-#                         relevantCategories.append(category.pk)
+#                         relevantExpertises.append(category.pk)
                         
-        griscats = Griscat.objects.filter(cat__in=relevantCategories)#list(list(expertises.values_list('cat', flat=True)))
-        griscatList = griscats.values_list('gr', flat=True)
+        griscats = Griscat.objects.filter(cat__in=relevantCategories, gr__level=0).distinct()#list(list(expertises.values_list('cat', flat=True)))
+        if griscats is None:
+            griscats = Griscat.objects.none()
+        grIds = griscats.values_list('gr', flat=True)
                                           
         # no search
         if (not isCategorySearch) and (not isStringSearch):
-            return Grievance.objects.filter(pk__in=griscatList).order_by("-creation_tstmp")
+            return Grievance.objects.filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).order_by("-creation_tstmp").distinct()
         
         # category search
         elif isCategorySearch and (not isStringSearch):
-            return Grievance.objects.filter(cats__in=categories, pk__in=griscatList).order_by("-creation_tstmp").distinct()
+            return Grievance.objects.filter(cats__in=categories, pk__in=grIds).extra(where=[relevantExpertiseClause]).order_by("-creation_tstmp").distinct()
 
         # string search
         elif isStringSearch and (not isCategorySearch):
-            return Grievance.objects.search(searchString).filter(pk__in=griscatList).order_by("-creation_tstmp").distinct()
+            return Grievance.objects.search(searchString).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).distinct()
         
         # category based string search
         else:            
-            grievances = list(Grievance.objects.search(searchString).filter(pk__in=griscatList))
+            grievances = list(Grievance.objects.search(searchString).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).distinct())
             if (keys is not None) and (len(keys) > 0):
                 for key in keys:
-                    tempGrievances = list(Grievance.objects.search(key).filter(pk__in=griscatList))
+                    tempGrievances = list(Grievance.objects.search(key).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).distinct())
                     for tempGrievance in tempGrievances:
                         grievanceSet = set(grievances)
                         if not tempGrievance in grievanceSet:
@@ -188,7 +207,19 @@ def get_grievances(scope, searchString, categories, mId, member):
             
             return grievances
     return None
+
+# def filter_expertise_relevant_grievances(categoryRelevantGrievances, relevantExpertises):
+#     grievances = []
+#     
+#     for relevantExpertise in relevantExpertises:
+#         for grievance in categoryRelevantGrievances:
+#             desiredExpertise = grievance.get_depth_of_understanding()
+#             if grievance.cat == relevantExpertise.cat and desiredExpertise <= relevantExpertise.level:
+#                 grievances.append(grievance)
+#                 
+#     return grievances
  
+##################################################################################################################
 def get_griscats(grievances):
     if grievances is not None:
 #         return Griscat.objects.filter(gr__in=list(list(grievances.values_list('id'))))#, flat=True
@@ -199,21 +230,24 @@ def get_griscats(grievances):
     else:
         return None
 
+##################################################################################################################
 def get_category_names(categories):
     if categories is not None:
         return Category.objects.filter(id__in=list(list(categories.values_list('cat', flat=True)))).order_by("-level")
     else:
         return None
 
+##################################################################################################################
 # Algorithm: expand_grievance
 # fetch all interim grievances against this grievance (must be level 0)
 # fetch finalized solution for all but the (last) outstanding grievance
 # sort solutions proposed for the outstanding grievance by experts on ...
-#     author's expertise's category-level, author's expertise's level in that category, author's expertise's expertise in that category  
+#     author's expertise's category-level, author's expertise's level in that category, author's expertise's expertise in that category 
+################################################################################################################## 
 def expand_grievance(grievance):
     grievances = Grievance.objects.none()
     if (grievance is not None) and (grievance.level == 0):
-        grievances = list(Grievance.objects.filter(Q(id=grievance.pk) | Q(prnt_gr=grievance.pk)).order_by('level'))
+        grievances = list(Grievance.objects.filter(Q(id=grievance.pk) | Q(prnt_gr=grievance)).order_by('level'))
 #         grievances.append(grievance)
 # 
 #         for thisLevelGrievance in grievances:
@@ -225,7 +259,7 @@ def expand_grievance(grievance):
         visitorSolutions = []
         for thisLevelGrievance in grievances:
             if thisLevelGrievance.has_solution_finalized():
-                finalized_solutions = Solution.objects.filter(pk = thisLevelGrievance.fnl_sl)
+                finalized_solutions = Solution.objects.filter(pk = thisLevelGrievance.fnl_sl.pk)
                 for finalized_solution in finalized_solutions:
                     solutionSet = set(solutions)
                     if not finalized_solution in solutionSet:
@@ -256,3 +290,4 @@ def expand_grievance(grievance):
 
     else:
         return None, None 
+##################################################################################################################

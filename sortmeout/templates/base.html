@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8" />
 
-<title >{% block title %}{% endblock %}</title>
+<title>{% block title %}{% endblock %}</title>
 <link rel="stylesheet" type="text/css" href= "{% static "assets/css/base.css" %}" />
 
 <script src="{% static "assets/js/jquery-2.0.0.min.js" %}" ></script>
@@ -19,26 +19,33 @@
 			sortmeout
 		</div>
 	
-		<div id="templatemo_menu" class="ddsmoothmenu" align="right">
+		<div id="templatemo_menu" class="ddsmoothmenu" align="right"><!-- id="templatemo_menu" -->
     		<ul>
     			{% if mId >= 0 %}
-      				<li><a href="{% url 'members.views.all_grievances_view' 'private_forum' %}" class="selected">My Forum</a></li>
-      				<li><a href="{% url 'members.views.all_grievances_view' 'public_forum' %}">Public Forum</a></li>
-      				
-      				{% if member.is_expert %}
-      					<li><a href="{% url 'members.views.all_grievances_view' 'private_forum' %}">My Forum</a></li>
-      					<li><a href="{% url 'members.views.all_grievances_view' 'expert_forum' %}" class="selected">Expert Forum</a></li>
-      					<li><a href="{% url 'members.views.all_grievances_view' 'public_forum' %}">Public Forum</a></li>
+    				{% if member.is_expert %}
+      					<li>{% block my-forum1 %}<a href="{% url 'members.views.all_grievances_view' 'private_forum' %}" >{{ member.user.first_name }}'s Forum</a>{% endblock %}</li>
+      					<li>{% block exp-forum1 %}<a href="{% url 'members.views.all_grievances_view' 'expert_forum' %}" >Expert Forum</a>{% endblock %}</li>
+      					<li>{% block pub-forum1 %}<a href="{% url 'members.views.all_grievances_view' 'public_forum' %}" >Public Forum</a>{% endblock %}</li>
+      				{% else %}
+      					{% if member.is_member %}
+      					<li>{% block my-forum2 %}<a href="{% url 'members.views.all_grievances_view' 'private_forum' %}" >{{ member.user.first_name }}'s Forum</a>{% endblock %}</li>
+      					<li>{% block pub-forum2 %}<a href="{% url 'members.views.all_grievances_view' 'public_forum' %}" >Public Forum</a>{% endblock %}</li>
+      					{% endif %}
       				{% endif %}
       			{% else %}
-      				<li><a href="{% url 'members.views.all_grievances_view' 'public_forum' %}" class="selected">Public Forum</a></li>
+      				<li>{% block pub-forum3 %}<a href="{% url 'members.views.all_grievances_view' 'public_forum' %}" >Public Forum</a>{% endblock %}</li>
       			{% endif %}
     		</ul>
     		
     		{% if mId < 0 %}
-    			<button class="buttonstyle" type="button"><a href="{% url 'sortmeout.views.login_view' %}">log(me)in</a></button>
+    			{% if not disableLogin %}
+    				<button class="buttons" type="button"><a href="{% url 'sortmeout.views.login_view' %}" class="nodec">log(me)in</a></button>
+    			{% endif %}
+    			{% if not disableSignup %}
+    				<button class="buttons" type="button"><a href="{% url 'members.views.signup_view' 'member' %}" class="nodec">sign(me)up</a></button>
+    			{% endif %}	
 			{% else %}
-				<button class="buttonstyle" type="button"><a href="{% url 'sortmeout.views.logout_view'%}">log(me)out</a></button>
+				<button class="buttons" type="button"><a href="{% url 'sortmeout.views.logout_view'%}" class="nodec">log(me)out</a></button>
 			{% endif %}
   		</div>
 	</div>

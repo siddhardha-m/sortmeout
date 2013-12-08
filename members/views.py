@@ -1,17 +1,17 @@
-# from django.http import HttpResponse
-from django import forms
-from django.template import RequestContext
+'''
+Created on Nov 25, 2013
+
+@author: Rohit
+'''
+##################################################################################################################
 from django.shortcuts import render_to_response
 from django.contrib.auth.models import User
-from members.models import Member, Grievance, Solution, Griscat, Expertise,\
-    Category, Catkeys, Author
-from django.contrib.auth.models import Group
+from members.models import Member, Grievance, Solution, Griscat, Expertise, Category, Author
 from django.db.models import Q
-from collections import OrderedDict
 
-from members.forms import MemberLoginForm, MemberSignupForm1, MemberSignupForm2,\
+from members.forms import MemberSignupForm1, MemberSignupForm2,\
     PostNewGrievanceForm1, PostNewGrievanceForm2, SolutionForm,\
-    SearchForm, VisitorForm, SolutionFeedbackForm
+    SearchForm, VisitorForm, SolutionFeedbackForm, PostInterimGrievanceForm
 from django.db import IntegrityError
 from django.http.response import HttpResponseRedirect
 from members.utils import get_griscats, get_grievances, get_category_names,\
@@ -19,11 +19,14 @@ from members.utils import get_griscats, get_grievances, get_category_names,\
 from django.core.urlresolvers import reverse
 import itertools
 import re
+from django.utils.datetime_safe import datetime
 
+##################################################################################################################
 MEMBERS = 'members'
 
+##################################################################################################################
 def category_lookup(request):
-    categories = Category.objects.none()
+    categories = None
     if request.method == 'POST':
         categoryStart = request.POST['lookup_text']
         pattern = re.compile('\s*,\s*')
@@ -36,12 +39,24 @@ def category_lookup(request):
 #             categories = Category.objects.all()
         
     return render_to_response('category_lookup.html', {'categories' : categories})
-        
+      
+def category_expertise_level(request):    
+    return render_to_response('category_expertise_level.html')  
 
+##################################################################################################################
 def signup_view(request, signuptype='member'):
     signupform1 = MemberSignupForm1()
     signupform2 = MemberSignupForm2()
     signupform3 = PostNewGrievanceForm2()
+    
+    mId = -1
+    member = None
+    try:
+        mId = request.session['member_id']
+        member = request.session['member']
+    except:
+        mId = -1
+        member = None
     
     isMemberSignup = False      # default member signup
     isExpertSignup = False      # expert member signup
@@ -52,8 +67,9 @@ def signup_view(request, signuptype='member'):
     
     if request.method == 'POST':
         keypress = request.POST['keypress']
+        categories = None
         
-        if keypress == 'signmeup':
+        if keypress == 'sign(me)up':
             isValidMemberSignupForm = False
             if isMemberSignup or isExpertSignup:
                 signupform1 = MemberSignupForm1(request.POST)
@@ -64,17 +80,32 @@ def signup_view(request, signuptype='member'):
             if isExpertSignup:
                 signupform3 = PostNewGrievanceForm2(request.POST)
                 isValidExpertSignupForm = signupform3.is_valid()
+                
+                if isValidExpertSignupForm:
+                    designation = signupform1.cleaned_data["designation"]
+                    temp = signupform3.cleaned_data["category"]
+                    categories = extract_categories_from_string(temp)
+                    
+                    levels = []
+                    if categories is None or len(categories) == 0:
+                        signupform3._errors["category"] = signupform3.error_class(["Please enter suitable categories of your expertise."])
+                        isValidExpertSignupForm = False
+                    else:
+                        pattern = re.compile('\s*,\s*')
+                        tokens = pattern.split(temp)
+                        for i in range(len(categories)):
+                            try:
+                                j = int(tokens[(i*2)+1])
+                                levels.append(j)
+                            except:
+                                tokens.insert((i*2)+1, 1)
+                                levels.append(1)
         
             if isValidMemberSignupForm and isValidExpertSignupForm:
                 username = signupform2.cleaned_data["username"]
                 password = signupform2.cleaned_data["password"]
                 email = signupform2.cleaned_data["email"]
                 
-                if isExpertSignup:
-                    designation = signupform1.cleaned_data["designation"]
-                    temp = signupform3.cleaned_data["category"]
-                    categories = extract_categories_from_string(temp) 
-
                 try:
                     print("Checking availability of entered username.")
                     newUser = User.objects.create_user(username, email, password)
@@ -102,17 +133,16 @@ def signup_view(request, signuptype='member'):
                             newMember.status = newMember.set_expert()
                             newMember.save()
                             
-                            for category in categories:
-                                newExpertise = Expertise(ex=newMember, cat=category, level=1, expertise=0)
+                            for i in range(len(categories)):
+                                newExpertise = Expertise(ex=newMember, cat=categories[i], level=levels[i], expertise=0)
                                 newExpertise.save()
                             
                         print("Created new %s :%s_%s: mId#%d" % (signuptype, newMember.user.first_name, newMember.user.last_name, newMember.user.id))
 #                         HttpResponseRedirect('/signin/')
 #                         loginform = MemberLoginForm()
                         request.session.flush()
-                        dictionary = add_csrf(request, form=MemberLoginForm())
+#                         dictionary = add_csrf(request, form=MemberLoginForm())
                         return HttpResponseRedirect(reverse('sortmeout.views.login_view'))
-#                         return render_to_response('index.html', dictionary)
                  
                     #else:
                         #raise forms.ValidationError('The username of your choice is unavailable. Please choose a different one.')
@@ -127,10 +157,10 @@ def signup_view(request, signuptype='member'):
         
     request.session.flush()
     request.method = 'POST'
-    dictionary = add_csrf(request, form1=signupform1, form2=signupform2, form3=signupform3, signuptype=signuptype)
+    dictionary = add_csrf(request, form1=signupform1, form2=signupform2, form3=signupform3, signuptype=signuptype, mId=mId, member=member, disableSignup=True)
     return render_to_response('registration.html', dictionary)
-#     return render_to_response('registration.html', {'form1': signupform1, 'form2': signupform2, }, context_instance=RequestContext(request))
 
+##################################################################################################################
 def all_grievances_view(request, scope):
     searchform = SearchForm()
     
@@ -139,12 +169,19 @@ def all_grievances_view(request, scope):
     isExpertForum = False
     if scope == 'private_forum':
         isPrivateForum = True
-        scope_number = 1
     elif scope == 'expert_forum':
         isExpertForum = True
-        scope_number = 2
     else:
         isPublicForum = True
+        
+    scope_number = 0
+    if isExpertForum:
+        scope_number = 2
+    elif isPrivateForum:
+        scope_number = 1
+    elif isPublicForum:
+        scope_number = 0
+    else:
         scope_number = 0
     
     isValidSearch = False
@@ -197,10 +234,11 @@ def all_grievances_view(request, scope):
             
     return render_to_response("grievance_list.html", dictionary)
 
+##################################################################################################################
 def post_new_grievance_view(request):
-#     action = reverse("new_grievance", args=[post_id])
     try:
         mId = request.session['member_id']
+        member = request.session['member']
         postNewGrievanceForm1 = PostNewGrievanceForm1()
         postNewGrievanceForm2 = PostNewGrievanceForm2()
         
@@ -216,50 +254,52 @@ def post_new_grievance_view(request):
                     statement = postNewGrievanceForm1.cleaned_data["statement"]
                     temp = postNewGrievanceForm2.cleaned_data["category"]
                     categories = extract_categories_from_string(temp)
+                    expertiseSought = postNewGrievanceForm2.cleaned_data["understanding"]
                     visibility = postNewGrievanceForm1.cleaned_data["status"]
                     
-                    try:
-                        newGrievance = Grievance(ath=request.session['member'], title=title, statement=statement)
-                        newGrievance.status = 0
-                        newGrievance.set_open()         # normally it should be awaiting_review
-                        if visibility == 1:             # Grievance visibility set to private
-                            newGrievance.set_private()
-                        else:                           # Grievance visibility set to public
-                            newGrievance.set_public()
-                        newGrievance.save()
-                        
-                        for category in categories:
-                            newGrisCat = Griscat(gr=newGrievance, cat=category)
-                            newGrisCat.save() 
+                    if categories is None or len(categories) == 0:
+                        postNewGrievanceForm2._errors["category"] = postNewGrievanceForm2.error_class(["Please enter a suitable category for the grievance."])
                     
-                        if newGrievance.pk:
-                            print("New grievance grId#%d from mId#%d" % (newGrievance.pk, mId))
-                            return all_grievances_view(request, scope="member_forum")
+                    else:
+                        try:
+                            newGrievance = Grievance(ath=request.session['member'], title=title, statement=statement, creation_tstmp=datetime.now())
+                            newGrievance.status = 0
+                            newGrievance.set_open()         # normally it should be awaiting_review
+                            if visibility == 1:             # Grievance visibility set to private
+                                newGrievance.set_private()
+                            else:                           # Grievance visibility set to public
+                                newGrievance.set_public()
+                                
+                            try:
+                                newGrievance.set_depth_of_understanding(int(expertiseSought))
+#                                 temp = newGrievance.get_depth_of_understanding()
+                            except:
+                                newGrievance.set_depth_of_understanding(0)
+                            newGrievance.save()
+                        
+                            for category in categories:
+                                newGrisCat = Griscat(gr=newGrievance, cat=category)
+                                newGrisCat.save() 
+                    
+                            if newGrievance.pk:
+                                print("New grievance grId#%d from mId#%d" % (newGrievance.pk, mId))
+                                return HttpResponseRedirect(reverse('members.views.all_grievances_view', args=['private_forum', ]))
                             
-                        else:
-                            postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Could not register your grievance. Please try again later."])
+                            else:
+                                postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Could not register your grievance. Please try again later."])
                             
-                    except Exception, e:
-                        postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Failed to register your grievance. Please try again later."])
-                        print "Caught:", e
+                        except Exception, e:
+                            postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Failed to register your grievance. Please try again later."])
+                            print "Caught:", e
             
-        dictionary = add_csrf(request, form1=postNewGrievanceForm1, form2=postNewGrievanceForm2)
+        dictionary = add_csrf(request, form1=postNewGrievanceForm1, form2=postNewGrievanceForm2, mId=mId, member=member)
         return render_to_response('newgrievance.html', dictionary)
-#         return render_to_response('newgrievance.html', {'form1': postNewGrievanceForm1, 'form2': postNewGrievanceForm2}, context_instance=RequestContext(request))
     
     except KeyError:
         mId = -1
-        
-        loginform = MemberLoginForm()
-        dictionary = add_csrf(request, form=loginform)
         return HttpResponseRedirect(reverse('sortmeout.views.login_view'))
-#         return render_to_response('index.html', dictionary)
-#     return render_to_response('index.html', {'form': loginform}, context_instance=RequestContext(request))
-#     title = "Knock knock !!! Sort(Me)Out !!!"
-#     subject = ''
 
-#     return render_to_response("new_grievance.html", add_csrf(request, subject=subject, action=action, title=title))
-
+##################################################################################################################
 # Algorithm ... grievance_view
 #
 # public grievance ...
@@ -270,6 +310,7 @@ def post_new_grievance_view(request):
 # originating member - can view originating grievance with option to choose solutions and post interim grievance
 # relevant expert - can view grievance with option to post solution
 # non-relevant expert/ other member/ visitor - cannot view grievance
+##################################################################################################################
 def grievance_view(request, grId, slId):
     try:
         mId = request.session['member_id']
@@ -281,6 +322,7 @@ def grievance_view(request, grId, slId):
         member = Member(user=unregisteredUser)
         
     grievances = Grievance.objects.filter(id=grId)
+    grievance = grievances[0]
         
     try:
         slId = int(slId)
@@ -289,25 +331,24 @@ def grievance_view(request, grId, slId):
     if slId > 0 and request.method == 'GET':
         selected_sls = Solution.objects.filter(id=slId)
         if (selected_sls is not None) and (len(selected_sls) > 0):
-            selected_grs = Grievance.objects.filter(Q(id=grId) | Q(prnt_gr=grievances[0].pk)).order_by('-level')
+            selected_grs = Grievance.objects.filter(Q(id=grId) | Q(prnt_gr=grievance.pk)).order_by('-level')
             selected_gr = selected_grs[0]
-            selected_gr.update_finalized_solution(selected_sls[0])
-            selected_gr.set_solution_selected()
-            selected_gr.save()
-            
-            selected_sl = selected_sls[0]
-            selected_sl.set_selected()
-            selected_sl.save()
+            selected_gr.update_selected_solution(selected_sls[0])
+#             selected_gr.save()
+#             
+#             selected_sl = selected_sls[0]
+#             selected_sl.set_selected()
+#             selected_sl.save()
     
-    interimGrievanceForm = PostNewGrievanceForm1()
+    interimGrievanceForm = PostInterimGrievanceForm()
     newSolutionForm = SolutionForm()
     solutionFeedbackForm = SolutionFeedbackForm()
     visitorForm = VisitorForm()
     if request.method == 'POST':
         keypress = request.POST['keypress']
         
-        if mId >= 0 and (keypress == 'closegrievance' or keypress == 'submitrevisedgrievance'):
-            interimGrievanceForm = PostNewGrievanceForm1(request.POST)
+        if mId >= 0 and (keypress == 'closegrievance' or keypress == 'submitrevisedgrievance' or keypress == 'submitoutcome'):
+            interimGrievanceForm = PostInterimGrievanceForm(request.POST)
             solutionFeedbackForm = SolutionFeedbackForm(request.POST)
             
             closable_gr = None
@@ -332,25 +373,33 @@ def grievance_view(request, grId, slId):
                         selected_sl.set_satisfaction_rating(rating)
                         selected_sl.save()
                         
-                        closable_grs = Grievance.objects.filter(prnt_gr=selected_sl.gr).order_by('-level')
+                        closable_grs = Grievance.objects.filter(Q(pk=selected_sl.gr.pk) | Q(prnt_gr=selected_sl.gr)).order_by('-level')
                         closable_gr = closable_grs[0]
                         closable_lvl = closable_grs[0].level
-                        closable_gr.update_finalized_solution(selected_sl)
+                        closable_gr.update_selected_solution(selected_sl)
+                        selected_sl.set_not_selected()
+                        selected_sl.save()
                         print "New closable grievance identified at level %d." % (closable_lvl)
             except:
                 print "Session does not contain a selected solution."
                 
-            if closable_gr is not None:
-                closable_gr.set_solution_finalized()
-                
             if keypress == 'closegrievance':
+                if closable_gr is not None:
+                    closable_gr.set_solution_finalized()
+                    closable_gr.save()
+                    
                 selected_sl.gr.set_closed_by_author()
+                selected_sl.gr.save()
                     
             elif keypress == 'submitrevisedgrievance':
+                if closable_gr is not None:
+                    closable_gr.set_solution_finalized()
+                    closable_gr.save()
+                
                 if interimGrievanceForm.is_valid():
                     statement = interimGrievanceForm.cleaned_data["statement"]
                         
-                    interimGrievance = Grievance(prnt_gr=grievances[0], ath=member, statement=statement, status=0, level=closable_lvl+1)
+                    interimGrievance = Grievance(prnt_gr=grievance, ath=member, statement=statement, status=0, level=closable_lvl+1, creation_tstmp=datetime.now())
                     interimGrievance.save()
             
         elif keypress == 'submitnewsolution':
@@ -360,8 +409,12 @@ def grievance_view(request, grId, slId):
                 statement = newSolutionForm.cleaned_data["statement"]
                 expected_outcome = newSolutionForm.cleaned_data["expected_outcome"]
                 
+                outstanding_grs = Grievance.objects.filter(Q(pk=grievance.pk) | Q(prnt_gr=grievance)).order_by('-level')
+                outstanding_gr = outstanding_grs[0]
+                outstanding_lvl = outstanding_gr.level
+                
                 if mId >= 0:
-                    newSolution = Solution(gr=grievances[0], ath=member, statement=statement, expected_outcome=expected_outcome)
+                    newSolution = Solution(gr=grievance, level=outstanding_lvl, ath=member, statement=statement, expected_outcome=expected_outcome)
                     newSolution.save()
                     
                 else:
@@ -374,13 +427,13 @@ def grievance_view(request, grId, slId):
                         phone_no = visitorForm.cleaned_data["phone_no"]
                 
                         visitorAuthor = Author.objects.none()
-                        if first_name == "Anonymous" and last_name == "" and email == "" and phone_no == "":
+                        if (first_name == "Anonymous" or first_name == "") and last_name == "" and email == "" and phone_no == "":
                             visitorAuthor = Author.objects.get(pk=1)
                         else:
                             visitorAuthor = Author(first_name=first_name, last_name=last_name, email=email, phone_no=phone_no)
                             visitorAuthor.save()
                 
-                        newSolution = Solution(gr=grievances[0], vath=visitorAuthor, statement=statement, expected_outcome=expected_outcome)
+                        newSolution = Solution(gr=grievance, level=outstanding_lvl, vath=visitorAuthor, statement=statement, expected_outcome=expected_outcome)
                         newSolution.save()
         
 #         if member.is_member():
@@ -399,19 +452,20 @@ def grievance_view(request, grId, slId):
             return HttpResponseRedirect(reverse('members.views.all_grievances_view', args=['public_forum', ]))
         
         else:                                       # if expert, check expertise
-            expertises = Expertise.objects.filter(ex=member.user.id).order_by("-level")
-            expertiseCategories = expertises.values_list('cat', flat=True)
-            griscats = Griscat.objects.filter(gr=grId)
-            grievanceCategories = griscats.values_list('cat', flat=True)
+            minimumExpertiseLevel = grievance.get_depth_of_understanding()
+            expertises = Expertise.objects.filter(ex=member.user.id, level__gte=minimumExpertiseLevel).order_by("-level")
+            if (expertises is not None) and (len(expertises) > 0):
+                expertiseCategories = expertises.values_list('cat', flat=True)
+                griscats = Griscat.objects.filter(gr=grId)
+                grievanceCategories = griscats.values_list('cat', flat=True)
             
-            for grievanceCategory in grievanceCategories:
-                
-                if isRelevantExpert:
-                    break
+                expertiseCategorySet = set(expertiseCategories)
+                for grievanceCategory in grievanceCategories:
+                    if isRelevantExpert:
+                        break
                     
-                for expertiseCategory in expertiseCategories:
-                    if grievanceCategory == expertiseCategory:      # if expert in this grievance's category 
-                        isRelevantExpert = True                     # validate as relevant expert
+                    if grievanceCategory in expertiseCategorySet:       # if expert in this grievance's category 
+                        isRelevantExpert = True                         # validate as relevant expert
                         break
                         
             if not isRelevantExpert:                # if not relevant expert, deny access
@@ -419,7 +473,7 @@ def grievance_view(request, grId, slId):
                 return HttpResponseRedirect(reverse('members.views.all_grievances_view', args=['public_forum', ]))    
     
     # if accessible grievance
-    grievances, solutions = expand_grievance(grievances[0])
+    grievances, solutions = expand_grievance(grievance)
     
     canBeClosed = False
     if grievances[-1].fnl_sl is not None and grievances[-1].fnl_sl.is_rated():
@@ -462,41 +516,4 @@ def grievance_view(request, grId, slId):
                               form=newSolutionForm, visitorForm=visitorForm, member=member, mId=mId)
 
     return render_to_response("grievance.html", dictionary)
-    
-    
-   
-   
-#             grievances = Grievance.objects.filter(Q(id=grievance_id) | Q(prnt_gr=grievance_id)).filter(ath=mId).order_by("-creation_tstmp")
-#             solutions = Solution.objects.filter(gr__in=list(list(grievances.values_list('id', flat=True))))
-#             solutionAuthors = Member.objects.filter(pk__in=list(list(solutions.values_list('ath', flat=True))))
-            
-#         elif member.is_expert():      
-#             grievances = Grievance.objects.filter(Q(id=grievance_id) | Q(prnt_gr=grievance_id)).order_by("-creation_tstmp")
-#             grievanceAuthor = Member.objects.get(pk=grievances[0].ath)
-#             solutions = Solution.objects.filter(gr__in=list(list(grievances.values_list('id', flat=True))))
-#             solutionAuthors = Member.objects.filter(pk__in=list(list(solutions.values_list('ath', flat=True))))
-        
-    
-        
-#         grievances = Grievance.objects.filter(id=grievance_id)
-#         grievanceAuthor = Member.objects.get(pk=grievances[0].ath)
-#         grievances, solutions = expand_grievance(grievances[0])
-#         exIds = []
-#         for solution in solutions:
-#             exIds.append(solution.ath)
-#         solutionAuthors = Member.objects.filter(pk__in=exIds)
-#         
-#         dictionary = add_csrf(request, grievances=grievances, grievanceAuthor=grievanceAuthor, solutions=solutions, solutionAuthors=solutionAuthors, form=SolutionForm(), member=member, mId=mId)
-#         grievances = Grievance.objects.filter(Q(id=grievance_id) | Q(prnt_gr=grievance_id)).order_by("-creation_tstmp")
-#         solutions = Solution.objects.filter(gr__in=list(list(grievances.values_list('id', flat=True))))
-#         list(list(solutions.values_list('ath', flat=True)))
-    
-#     grievance = mk_paginator(request, grievances, 20)   
-
-# def user_grievance_view(request):
-#     mId = request.session['member_id']
-#     solutions = Solution.objects.filter(gr=mId).order_by("-creation_tstmp")
-#     solutions = mk_paginator(request, solutions, 20)
-#     grievance = Grievance.objects.filter(mId=mId).order_by("-creation_tstmp")
-#     
-#     return render_to_response('grievance.html', add_csrf(request, grievance=grievance, mId=mId))
+##################################################################################################################

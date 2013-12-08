@@ -3,14 +3,15 @@ Created on Sep 25, 2013
 
 @author: rkhapare
 '''
+##################################################################################################################
 from django import forms
 from members.models import Member, Grievance, Griscat, Category, Solution,\
     Author
 from django.forms.extras.widgets import SelectDateWidget
 import datetime
 from django.contrib.auth.models import User
-# from django_select2 import ModelSelect2MultipleField
 
+##################################################################################################################
 class MemberLoginForm(forms.Form):
     username = forms.CharField(max_length=30)
     password = forms.CharField(widget=forms.PasswordInput())
@@ -35,9 +36,10 @@ class MemberLoginForm(forms.Form):
             self._errors["password"] = self.error_class(["Please enter your password."])
             
         return cleaned_data
-        
+
+##################################################################################################################        
 class MemberSignupForm1(forms.ModelForm):
-    address = forms.CharField(widget=forms.Textarea(attrs={'cols': 40, 'rows': 4}))
+    address = forms.CharField(widget=forms.Textarea(attrs={'cols': 32, 'rows': 5}))
     designation = forms.CharField(max_length=100, required=False)
     
     class Meta:
@@ -51,13 +53,18 @@ class MemberSignupForm1(forms.ModelForm):
     def clean(self):
         cleaned_data = super(MemberSignupForm1, self).clean()
         
+        address = cleaned_data.get("address")
         dob = cleaned_data.get("dob")
+        
+        if not address:
+            self._errors["address"] = self.error_class(["Please enter your address."])
         
         if not dob:
             self._errors["dob"] = self.error_class(["Please enter your birth-date."])
             
         return cleaned_data
         
+##################################################################################################################        
 class MemberSignupForm2(forms.Form):
     username = forms.CharField(max_length=30, required=True)
     password = forms.CharField(max_length=30, widget=forms.PasswordInput(), required=True)
@@ -98,10 +105,11 @@ class MemberSignupForm2(forms.Form):
             self._errors["firstname"] = self.error_class(["Please enter your first-name for external communication. It will never be shared/published."])
             
         return cleaned_data
-    
+
+##################################################################################################################    
 # ModelMultipleChoiceField
 class PostNewGrievanceForm1(forms.ModelForm): 
-    statement = forms.CharField(widget=forms.Textarea(attrs={'cols': 100, 'rows': 10}))
+    statement = forms.CharField(widget=forms.Textarea(attrs={'cols': 100, 'rows': 10, 'overflow': 'auto'}))
 #     CHOICES = (('1', 'Private',), ('2', 'Public',))
 #     visibility = forms.ChoiceField(widget=forms.RadioSelect, choices=CHOICES)
     
@@ -112,7 +120,22 @@ class PostNewGrievanceForm1(forms.ModelForm):
         widgets = {
             'status': forms.RadioSelect(choices=CHOICES)
         }
-    
+        
+    def clean(self):
+        cleaned_data = super(PostNewGrievanceForm1, self).clean()
+        
+        statement = cleaned_data.get("statement")
+        status = cleaned_data.get("status")
+        
+        if not statement:
+            self._errors["statement"] = self.error_class(["Please describe your grievance so our experts can sort(you)out !!!"])
+            
+        if not status:
+            self._errors["status"] = self.error_class(["Please enter a visibility scope for your grievance."])
+            
+        return cleaned_data
+
+##################################################################################################################    
 # class TagChoices(ModelSelect2MultipleField):
 #     queryset = Category.objects
 #     search_fields = ['name__icontains']
@@ -120,18 +143,51 @@ class PostNewGrievanceForm1(forms.ModelForm):
 #     def get_model_field_values(self, value):
 #         return {'name': value }
 
+##################################################################################################################
 class PostNewGrievanceForm2(forms.Form):
 #     category = forms.ModelMultipleChoiceField(queryset=Category.objects.all())
     category = forms.CharField(max_length=100, required=False)
+    CHOICES = (('1', 'Very Low',), ('2', 'Low',), ('3', 'Moderate',), ('4', 'High',), ('5', 'Very High',))
+    understanding = forms.ChoiceField(widget=forms.RadioSelect, choices=CHOICES, required=False)
 #     category = TagChoices(required=False)
     
     class Meta:
         model = Category
         exclude = ('id','prnt_cat','level')
+        
+    def clean(self):
+        cleaned_data = super(PostNewGrievanceForm2, self).clean()
+        
+        category = cleaned_data.get("category")
+        
+        if not category:
+            self._errors["category"] = self.error_class(["Please enter at least 1 (maximum 5) suitable/applicable category."])
+            
+        return cleaned_data
+#         CHOICES = (('1', 'Very Low',), ('2', 'Low',), ('3', 'Moderate',), ('4', 'High',), ('5', 'Very High',))
 #         widgets = {
-#             'category': forms.ModelMultipleChoiceField(queryset=Category.objects.all())
+#             'status': forms.RadioSelect(choices=CHOICES)
 #         }
 
+##################################################################################################################
+class PostInterimGrievanceForm(forms.Form): 
+    statement = forms.CharField(widget=forms.Textarea(attrs={'cols': 100, 'rows': 10, 'overflow': 'auto'}))
+    
+    class Meta:
+        model = Grievance
+        fields = ('statement')
+        
+    def clean(self):
+        cleaned_data = super(PostInterimGrievanceForm, self).clean()
+        
+        statement = cleaned_data.get("statement")
+        
+        if not statement:
+            self._errors["statement"] = self.error_class(["Please describe your grievance so our experts can sort(you)out !!!"])
+            
+        return cleaned_data
+
+##################################################################################################################
 class SolutionForm(forms.ModelForm):
     statement = forms.CharField(widget=forms.Textarea(attrs={'cols': 100, 'rows': 10}))
     expected_outcome = forms.CharField(widget=forms.Textarea(attrs={'cols': 100, 'rows': 5}), required=False)
@@ -140,6 +196,17 @@ class SolutionForm(forms.ModelForm):
         model = Solution
         fields = ('statement', 'expected_outcome')
         
+    def clean(self):
+        cleaned_data = super(SolutionForm, self).clean()
+        
+        statement = cleaned_data.get("statement")
+        
+        if not statement:
+            self._errors["statement"] = self.error_class(["Please describe your solution so that you can help us sort(it)out !!!"])
+            
+        return cleaned_data
+
+##################################################################################################################        
 class SolutionFeedbackForm(forms.ModelForm):
     actual_outcome = forms.CharField(widget=forms.Textarea(attrs={'cols': 100, 'rows': 5}), required=False)
     
@@ -151,7 +218,7 @@ class SolutionFeedbackForm(forms.ModelForm):
             'status': forms.RadioSelect(choices=CHOICES)
         }
     
-        
+##################################################################################################################        
 class VisitorForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30, required=False, initial='Anonymous')
     last_name = forms.CharField(max_length=30, required=False)
@@ -183,7 +250,8 @@ class VisitorForm(forms.ModelForm):
 #             cleaned_data.set("phone_no", "")
 #             
 #         return cleaned_data
-        
+
+##################################################################################################################        
 class SearchForm(forms.Form):
     srchStr = forms.CharField(max_length=100, required=False)
 #     category = forms.ModelMultipleChoiceField(queryset=Category.objects.all(), required=False)
@@ -192,3 +260,4 @@ class SearchForm(forms.Form):
     class Meta:
         model = Category
         exclude = ('id','prnt_cat','level')
+##################################################################################################################

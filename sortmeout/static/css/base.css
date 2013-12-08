@@ -58,7 +58,13 @@
 display: inline-block;
 }
 
-.ddsmoothmenu ul li a.selected, .ddsmoothmenu ul li a:hover { /*CSS class that's dynamically added to the currently active menu items' LI A element*/
+.ddsmoothmenu ul li.selected { /*CSS class that's dynamically added to the currently active menu items' LI A element*/
+	color: #ffb302;
+}
+
+.selected{ background-color: #ffb302; }
+
+.ddsmoothmenu ul li li.selected a.selected, .ddsmoothmenu ul li a:hover { /*CSS class that's dynamically added to the currently active menu items' LI A element*/
 	color: #ffb302;
 }
 /*1st sub level menu*/
@@ -150,3 +156,109 @@ height:28px;
 text-align:center;}
 .buttonstyle:hover{background-color:#5cb811;}
 .buttonstyle:active{position:relative;top:1px;}
+
+.textbox {
+	border: 1px solid #848484;
+	-webkit-border-radius: 30px;
+	-moz-border-radius: 30px;
+	border-radius: 30px;
+	outline: 0;
+	height: 25px;
+	width: 275px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+#rounded-corner {
+	margin: 0px;
+ 	width="100%";
+	text-align: left;
+	background: #525252;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+}
+#rounded-corner th {
+	padding: 8px;
+	font-size: 14px;
+	color: #FFFFFF;
+}
+#rounded-corner td {
+	padding: 8px;
+	background: #FFF;
+	border-top: 1px solid #fff;
+	font-size: 15px;
+}
+#rounded-corner tbody tr:hover td {
+	background: #d2e7f0;
+	font-size: 16.5px;
+}
+
+#rounded-corner-grv {
+	margin: 0px;
+ 	width="100%";
+	text-align: left;
+	background: #525252;
+	border-radius: 10px;
+	-moz-border-radius: 10px;
+	-webkit-border-radius: 10px;
+}
+
+#rounded-corner-grv th {
+	padding: 8px;
+	font-size: 14px;
+	color: #FFFFFF;
+}
+
+#rounded-corner-grv tbody tr:hover td {
+	background: #d2e7f0;
+	font-size: 16.5px;
+}
+
+.nodec
+{
+	text-decoration:none;
+}
+
+.buttons {
+	text-decoration: none;
+	text-align: center;
+	-webkit-border-radius: 50px;
+	-moz-border-radius: 50px;
+	border-radius: 50px;
+	font: 15px Arial, Helvetica, sans-serif;
+	background-color: #FFFFFF;
+}
+
+.grievance{
+background-color: #ffe6e6;
+}
+
+.finalized-sl{
+background-color: #adebad;
+}
+
+.selected-sl{
+background-color: #ccffff;
+}
+
+.solution{
+background-color: #d6ffad;
+}
+
+.expected-outcome{
+background-color: #ffffcc;
+}
+
+.actual-outcome{
+background-color: #ffe680;
+}
+
+.select-a-sol{
+background-color: #ffffff;
+}
+
+.errorlist
+{
+	color:#990000;
+	text-decoration:none;
+}
