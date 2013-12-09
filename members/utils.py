@@ -267,7 +267,7 @@ def expand_grievance(grievance):
                 
             #elif thisLevelGrievance.is_open() and thisLevelGrievance.is_awaiting_solutions():
             elif thisLevelGrievance.is_open():
-                proposedSolutions = Solution.objects.filter(gr = thisLevelGrievance.pk).select_related('member', 'author')
+                proposedSolutions = Solution.objects.filter(gr = grievance, level=thisLevelGrievance.level).select_related('member', 'author')
                 
                 griscats = get_griscats(grievances)
                 if (griscats is not None) and (len(griscats) > 0):

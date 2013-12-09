@@ -3,9 +3,8 @@ Created on Sep 25, 2013
 
 @author: rkhapare
 '''
-# from django.http import HttpResponse
+##################################################################################################################
 from django.template import RequestContext
-# from django.template.loader import get_template
 from django.shortcuts import render_to_response
 from django.contrib.auth import login
 from django.shortcuts import HttpResponseRedirect
@@ -14,13 +13,14 @@ from members.forms import MemberLoginForm
 from django.contrib.auth import authenticate
 from members.models import Member
 from django.core.urlresolvers import reverse
-from members.views import all_grievances_view, add_csrf
+from members.views import add_csrf
 from django.contrib.auth.views import logout
-# from django.core.urlresolvers import reverse
 
+##################################################################################################################
 def thankyou(request):
     return render_to_response('thankyou.html', context_instance=RequestContext(request))
 
+##################################################################################################################
 def logout_view(request):
     logout(request)
     loginform = MemberLoginForm()
@@ -28,18 +28,28 @@ def logout_view(request):
     return HttpResponseRedirect('/signin/')
 #     return render_to_response('index.html', dictionary)
 
+##################################################################################################################
 def login_view(request):
     loginform = MemberLoginForm()
+    
+    mId = -1
+    member = None
+    try:
+        mId = request.session['member_id']
+        member = request.session['member']
+    except:
+        mId = -1
+        member = None
     
     if request.method == 'POST':
         keypress = request.POST['keypress']
         
-        if keypress == 'signmeup':
+        if keypress == 'sign(me)up':
 #             return HttpResponseRedirect('/signup/member/')
             return HttpResponseRedirect(reverse('members.views.signup_view', args=['member', ]))
 #             return HttpResponseRedirect(reverse('/signup/', args=['member']))
         
-        elif keypress == 'logmein':
+        elif keypress == 'log(me)in':
             loginform = MemberLoginForm(request.POST)
             if loginform.is_valid():
                 username = loginform.cleaned_data['username']
@@ -82,9 +92,10 @@ def login_view(request):
                         loginform._errors["username"] = loginform.error_class(["Oops!!! Could not log(you)in. Please check your login credentials."])
 #                         raise loginform.ValidationError("Oops! Could not log(you)in. Your account has been disabled.")
     
-    dictionary = add_csrf(request, form=loginform)
+    dictionary = add_csrf(request, form=loginform, mId=mId, member=member, disableLogin=True)
     return render_to_response('index.html', dictionary)
 
+##################################################################################################################
 # def login_view(request):
 #     errors = []
 #     username = ''
@@ -122,4 +133,4 @@ def login_view(request):
 #                         errors.append('Oops! Could not log(you)in. Your account has been disabled.')
 #                  
 #     return render_to_response('index.html', {'errors': errors, 'username': username,}, context_instance=RequestContext(request))
-    
+##################################################################################################################    

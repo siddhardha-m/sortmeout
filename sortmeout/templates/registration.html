@@ -73,18 +73,11 @@
   				<tr>
     				<td><label for="id_category">Categories *</label></td>
     				<td>:</td>
-    				<td>{{ form3.category }}</td>
+    				<td>{{ form3.category }}
+    					<ul id="lookup-results" class="cats"></ul>
+    					<ul id="expertise-level-choices"></ul>
+    				</td>
     				<td>{{ form3.category.errors }}</td>
-  				</tr>
-  				
-  				<tr>
-    				<td></td>
-    				<td></td>
-    				<td>
-    					<ul id="lookup-results" style="list-style-type: none;"></ul>
-    					<ul id="expertise-level-choices" style="list-style-type: none;"></ul>
-					</td>
-    				<td></td>
   				</tr>
 			{% endif %}
   

@@ -8,31 +8,27 @@
 {% csrf_token %}
 	<div class="sidebar_search">
 	<table>
-		<tr><td>
+		<tr>
+		<td><label for="id_srchstr">Looking for:</label></td>
+		
+		<td>
 		{{ form.non_field_errors }}
     	{{ form.srchStr.errors }}
-    	<label for="id_srchstr">Looking for:</label>
     	{{ form.srchStr }}&nbsp;&nbsp;&nbsp;&nbsp;
     	</td>
     	
+    	<td><label for="id_category">In categories:</label></td>
+    	
     	<td>
     	{{ form.category.errors }}
-    	<label for="id_category">In categories:</label>
     	{{ form.category }}&nbsp;&nbsp;
+    	<ul id="lookup-results" class="cats">
+    	</ul>
     	<td>
     	
     	<td>
     	<input type="submit" value="search" name="keypress" class="buttons"/>
     	</td>
-    	</tr>
-    	
-    	<tr>
-    	<td></td>
-    	<td>
-    	<ul id="lookup-results" style="list-style-type: none;">
-    	</ul>
-    	</td>
-    	<td></td>
     	</tr>
     </table>
     </div>

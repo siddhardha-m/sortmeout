@@ -25,42 +25,35 @@
 		    <td>{{ form2.understanding }}</td>
 		    <td>{{ form2.understanding.errors }}</td>
 	      </tr>
-
+	      
 		  <tr>
 		    <td><label for="id_statement">Description *</label></td>
 		    <td>:</td>
 		    <td>{{ form1.statement }}</td>
 		    <td>{{ form1.statement.errors }}</td>
 	      </tr>
-		  
+	      
 		  <tr>
 		    <td><label for="id_categories">Categories *</label></td>
 		    <td>:</td>
-		    <td>{{ form2.category }}</td>
+		    <td>{{ form2.category }}<ul id="lookup-results" class="cats"></ul></td>
 		    <td>{{ form2.category.errors }}</td>
 	      </tr>
 	      
-	      <tr>
-		    <td></td>
-		    <td></td>
-		    <td><ul id="lookup-results" style="list-style-type: none;"></ul></td>
-		    <td></td>
-	      </tr>
-
 		  <tr>
 		    <td><label for="id_visibility">Visibility *</label></td>
 		    <td>:</td>
 		    <td>
 		    	{% for radio in form1.status %}
+		    	{{ radio.tag }}
 				{{ radio.choice_label }}
-				{{ radio.tag }}
 				{% endfor %}
 		    </td>
 		    <td>{{ form1.status.errors }}</td>
 	      </tr>
   </table>
-
-    	<input type="submit" value="submitnewgrievance" name="keypress" />
+		<br>
+    	<input type="submit" value="submitnewgrievance" name="keypress" class="buttons" />
 	</p>
 </form>
 {% endblock %}

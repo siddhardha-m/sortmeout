@@ -1,11 +1,16 @@
-# from django.conf.urls import patterns, include, url
+'''
+Created on Sep 25, 2013
+
+@author: rkhapare
+'''
+##################################################################################################################
 from django.conf.urls import *
-# from sortmeout.views import login_view
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
 admin.autodiscover()
 
+##################################################################################################################
 urlpatterns = patterns('sortmeout.views',
                         url('^signin/$', 'login_view'),
                         url('^logout/$', 'logout_view'),
@@ -33,4 +38,6 @@ urlpatterns += patterns('members.views',
                         url('^grievances/grievance/(\d+)/(\d+)/$', 'grievance_view'),
                         url('^newgrievance/$', 'post_new_grievance_view'),
                         url(r'^lookup/$', 'category_lookup'),
+                        url(r'^expertise/$', 'category_expertise_level'),
 )
+##################################################################################################################

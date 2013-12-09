@@ -318,7 +318,7 @@ def grievance_view(request, grId, slId):
         
     except (KeyError, Exception):
         mId = -1
-        unregisteredUser = User(pk=-1, first_name='anonymous')
+        unregisteredUser = User(pk=-1, first_name='Anonymous')
         member = Member(user=unregisteredUser)
         
     grievances = Grievance.objects.filter(id=grId)
@@ -331,9 +331,18 @@ def grievance_view(request, grId, slId):
     if slId > 0 and request.method == 'GET':
         selected_sls = Solution.objects.filter(id=slId)
         if (selected_sls is not None) and (len(selected_sls) > 0):
-            selected_grs = Grievance.objects.filter(Q(id=grId) | Q(prnt_gr=grievance.pk)).order_by('-level')
-            selected_gr = selected_grs[0]
-            selected_gr.update_selected_solution(selected_sls[0])
+            selected_sl = selected_sls[0]
+            selected_lvl = selected_sls[0].level
+            selected_gr = None
+            if selected_lvl == 0:
+                selected_gr = selected_sl.gr
+            else:
+                selected_grs = Grievance.objects.filter(Q(id=selected_sl.gr.pk) | Q(prnt_gr=selected_sl.gr)).order_by('-level')
+                selected_gr = selected_grs[0]
+            
+            if (selected_gr is not None) and (not selected_gr.has_solution_finalized()):
+                selected_gr.update_selected_solution(selected_sl)
+                request.session['selected_sl'] = selected_sl
 #             selected_gr.save()
 #             
 #             selected_sl = selected_sls[0]
@@ -373,10 +382,13 @@ def grievance_view(request, grId, slId):
                         selected_sl.set_satisfaction_rating(rating)
                         selected_sl.save()
                         
-                        closable_grs = Grievance.objects.filter(Q(pk=selected_sl.gr.pk) | Q(prnt_gr=selected_sl.gr)).order_by('-level')
+                        closable_grs = Grievance.objects.filter(pk=selected_sl.gr.pk, level=selected_sl.level)
                         closable_gr = closable_grs[0]
                         closable_lvl = closable_grs[0].level
                         closable_gr.update_selected_solution(selected_sl)
+                        closable_gr.set_solution_not_selected()
+                        closable_gr.save()
+                        
                         selected_sl.set_not_selected()
                         selected_sl.save()
                         print "New closable grievance identified at level %d." % (closable_lvl)
@@ -400,6 +412,13 @@ def grievance_view(request, grId, slId):
                     statement = interimGrievanceForm.cleaned_data["statement"]
                         
                     interimGrievance = Grievance(prnt_gr=grievance, ath=member, statement=statement, status=0, level=closable_lvl+1, creation_tstmp=datetime.now())
+                    interimGrievance.status = 0
+                    interimGrievance.set_open()
+                    if grievance.is_public():
+                        interimGrievance.set_public()
+                    elif grievance.is_private():
+                        interimGrievance.set_private()
+                    
                     interimGrievance.save()
             
         elif keypress == 'submitnewsolution':
@@ -489,17 +508,21 @@ def grievance_view(request, grId, slId):
 #             canBeClosed = False
 #             request.session['closable_gr'] = grievance
     
-    solutionAuthors = []
     solutionIsSelected = False
+    if grievances[-1].has_solution_selected() and grievances[-1].fnl_sl.is_selected():
+        solutionIsSelected = True
+        request.session['selected_sl'] = grievances[-1].fnl_sl
+        
+    acceptingSolutions = False
+    if not grievances[-1].has_solution_finalized():
+        acceptingSolutions = True
+    
+    solutionAuthors = []
     for solution in solutions:
         if solution.ath is not None:
             solutionAuthors.append(solution.ath)
         elif solution.vath is not None:
             solutionAuthors.append(solution.vath)
-        
-        if solution.is_selected():
-            solutionIsSelected = True
-            request.session['selected_sl'] = solution
 
     if mId == grievanceAuthor.user.id:          # if originating member/expert
         dictionary = add_csrf(request, grievances=grievances, solutions=solutions, grievanceAuthor=member, \
@@ -509,11 +532,11 @@ def grievance_view(request, grId, slId):
     elif isRelevantExpert:                      # or if relevant expert
         dictionary = add_csrf(request, grievances=grievances, grievanceAuthor=grievanceAuthor, solutions=solutions, \
                               solutionAuthors=solutionAuthors, grisolaths=itertools.izip_longest(grievances, solutions, solutionAuthors), \
-                              form=newSolutionForm, member=member, mId=mId)
+                              form=newSolutionForm, acceptingSolutions=acceptingSolutions, member=member, mId=mId)
     else:                                       # or if visitor
         dictionary = add_csrf(request, grievances=grievances, grievanceAuthor=grievanceAuthor, solutions=solutions, \
                               solutionAuthors=solutionAuthors, grisolaths=itertools.izip_longest(grievances, solutions, solutionAuthors),  \
-                              form=newSolutionForm, visitorForm=visitorForm, member=member, mId=mId)
+                              form=newSolutionForm, visitorForm=visitorForm, acceptingSolutions=acceptingSolutions, member=member, mId=mId)
 
     return render_to_response("grievance.html", dictionary)
 ##################################################################################################################

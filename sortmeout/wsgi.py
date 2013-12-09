@@ -13,8 +13,12 @@ middleware here, or combine a Django application with an application of another
 framework.
 
 """
-import os
+import os, sys
 
+sys.path.append('/u/rkhapare/dev')
+sys.path.append('/u/rkhapare/prj')
+sys.path.append('/u/rkhapare/prj/sortmeout')
+sys.path.append('/u/rkhapare/lib/python2.6/site-packages')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sortmeout.settings")
 
 # This application object is used by any WSGI server configured to use this

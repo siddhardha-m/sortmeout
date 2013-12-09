@@ -229,6 +229,13 @@ text-align:center;}
 	background-color: #FFFFFF;
 }
 
+.catstyle{
+margin-left: 45px;
+overflow: hidden;
+height: 1%;
+padding: 4px 5px 0;
+}
+
 .grievance{
 background-color: #ffe6e6;
 }
@@ -261,4 +268,28 @@ background-color: #ffffff;
 {
 	color:#990000;
 	text-decoration:none;
+}
+
+table td > div {
+	position: relative;
+}
+
+.cats {
+	opacity: 100%;
+	background-color: #ffffff;
+	position: absolute;
+	margin-top: 0px;
+	margin-left: 0px;
+	z-index: 999;
+	list-style-type: none;
+	padding: 4px 5px 0;
+}
+
+ul {
+	list-style-type: none;
+}
+
+.adjust
+{
+	margin-top: 60px;
 }

@@ -35,7 +35,7 @@
 		    			</tr>
 		    		{% endif %}
 		    
-		    		{% if solution.is_finalized%}<!-- print finalized solution --><!-- grievance.has_solution_finalized and  -->
+		    		{% if solution.is_finalized %}<!-- print finalized solution --><!-- grievance.has_solution_finalized and  -->
 		    			<tr><!-- grouping finalized solution elements -->
 		    			<tr class="finalized-sl">
 		    				<td>
@@ -162,10 +162,10 @@
 		        						<!-- input for satisfaction rating -->
         								{{ fbkform.status.errors }}
         								{% for radio in fbkform.status %}
-											{{ radio.choice_label }}
-											{{ radio.tag }}<br />
+        									{{ radio.tag }}
+											{{ radio.choice_label }}<br />
 										{% endfor %}
-										<input type="submit" value="submitoutcome" name="keypress" />
+										<input type="submit" value="submitoutcome" name="keypress" class="buttons" />
 		        					</td>
 		    					</tr>
 		    				{% else %}<!-- for others, print the actual outcome of the selected solution -->
@@ -188,7 +188,7 @@
             					<tr><!-- grouping solution elements -->
             					<tr class="solution">
 		    						<td>
-		    							Solution<br />
+		    							Solution {% if solution.is_rated %}(rated {{ solution.get_satisfaction_rating }}){% endif %}<br />
 		    							{% if solution.ath and author %}
             								{{ author.user.username }}
             								{% if author.is_expert %}
@@ -210,7 +210,7 @@
 		        					</td>
 		        					<td>
 		        						{% if member == grievanceAuthor and not solutionIsSelected and not solution.is_rated %}
-		        							<a class="button" href="{% url 'members.views.grievance_view' grievances.0.pk solution.pk%}">select</a>
+		        							<button class="buttons" type="button"><a id="new_grievance" href="{% url 'members.views.grievance_view' grievances.0.pk solution.pk%}" class="nodec">select</a></button>
 		        						{% endif %}
 		        					</td>
 		    					</tr>
@@ -249,8 +249,8 @@
             	{% endfor %}
             
             	{% if member == grievances.0.ath %} <!-- bad fix: visibility needs to be controlled from front-end -->
-    				{% if canBeClosed %}
-    					<tr>
+    				{% if grievances.0.is_open and canBeClosed %}
+    					<tr class="select-a-sol">
 		    				<td>
 		    					Revised Description
 		    				</td>
@@ -259,14 +259,14 @@
 		        				{{ form.statement }}
 		        			</td>
 		        			<td>
-		        				<input type="submit" value="submitrevisedgrievance" name="keypress" /><br />
-    							<input type="submit" value="closegrievance" name="keypress" />
+		        				<input type="submit" value="submitrevisedgrievance" name="keypress" class="buttons" /><br />
+    							<input type="submit" value="closegrievance" name="keypress" class="buttons" />
 		        			</td>
 		    			</tr>
 		    		{% endif %}
 		    		<!-- submit button here -->
     			{% else %}
-    				{% if grievances.0.is_open %}
+    				{% if grievances.0.is_open and acceptingSolutions %}
     				<!-- may be some condition here -->
     				<tr class="select-a-sol">
 		    			<td>
@@ -299,7 +299,7 @@
         					{{ form.expected_outcome }}
 		        		</td>
 		        		<td>
-		        			<input type="submit" class="buttons" value="submitnewsolution" name="keypress" />
+		        			<input type="submit" class="buttons" value="submitnewsolution" name="keypress" class="buttons" />
 		        		</td>
 		    		</tr>
     				{% endif %}

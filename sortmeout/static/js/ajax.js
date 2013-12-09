@@ -1,3 +1,7 @@
+$(document).ready(function(){
+	$("td").wrapInner('<div />');
+});
+
 $(function(){
 
     $('#id_category').keyup(function() {

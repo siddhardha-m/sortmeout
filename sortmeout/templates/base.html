@@ -36,7 +36,7 @@
       				<li>{% block pub-forum3 %}<a href="{% url 'members.views.all_grievances_view' 'public_forum' %}" >Public Forum</a>{% endblock %}</li>
       			{% endif %}
     		</ul>
-    		
+    		<div class="adjust">
     		{% if mId < 0 %}
     			{% if not disableLogin %}
     				<button class="buttons" type="button"><a href="{% url 'sortmeout.views.login_view' %}" class="nodec">log(me)in</a></button>
@@ -47,6 +47,7 @@
 			{% else %}
 				<button class="buttons" type="button"><a href="{% url 'sortmeout.views.logout_view'%}" class="nodec">log(me)out</a></button>
 			{% endif %}
+			</div>
   		</div>
 	</div>
 	
