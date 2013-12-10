@@ -35,7 +35,7 @@
 		    			</tr>
 		    		{% endif %}
 		    
-		    		{% if solution.is_finalized %}<!-- print finalized solution --><!-- grievance.has_solution_finalized and  -->
+		    		{% if solution.is_finalized %}<!-- print finalized solution --><!-- grievance.has_solution_finalized and grievance.fnl_sl == solution -->
 		    			<tr><!-- grouping finalized solution elements -->
 		    			<tr class="finalized-sl">
 		    				<td>
@@ -92,7 +92,7 @@
 		    			{% endif %}
 		    			</tr>
             		{% else %}
-            			{% if solution.is_selected %}<!-- print selected solution --><!-- grievance.has_solution_selected and -->
+            			{% if solution.is_selected %}<!-- print selected solution --><!-- grievance.has_solution_selected and grievance.fnl_sl == solution -->
             				<tr><!-- grouping selected solution elements -->
             				<tr class="selected-sl">
 		    					<td>
@@ -188,7 +188,7 @@
             					<tr><!-- grouping solution elements -->
             					<tr class="solution">
 		    						<td>
-		    							Solution {% if solution.is_rated %}(rated {{ solution.get_satisfaction_rating }}){% endif %}<br />
+		    							Solution<br />
 		    							{% if solution.ath and author %}
             								{{ author.user.username }}
             								{% if author.is_expert %}
@@ -209,8 +209,12 @@
 		        						{{ solution.statement }}
 		        					</td>
 		        					<td>
-		        						{% if member == grievanceAuthor and not solutionIsSelected and not solution.is_rated %}
-		        							<button class="buttons" type="button"><a id="new_grievance" href="{% url 'members.views.grievance_view' grievances.0.pk solution.pk%}" class="nodec">select</a></button>
+		        						{% if solution.is_rated %}
+		        							rated {{ solution.get_satisfaction_rating }}
+		        						{% else %}
+		        							{% if member == grievanceAuthor and not solutionIsSelected and not solution.is_rated %}
+		        								<button class="buttons" type="button"><a id="new_grievance" href="{% url 'members.views.grievance_view' grievances.0.pk solution.pk%}" class="nodec">select</a></button>
+		        							{% endif %}
 		        						{% endif %}
 		        					</td>
 		    					</tr>

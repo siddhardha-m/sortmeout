@@ -30,10 +30,10 @@ class MemberLoginForm(forms.Form):
         password = cleaned_data.get("password", None)
         
         if not username:
-            self._errors["username"] = self.error_class(["Please enter your username."])
+            self._errors["username"] = self.error_class(["Please enter your username"])
             
         if not password:
-            self._errors["password"] = self.error_class(["Please enter your password."])
+            self._errors["password"] = self.error_class(["Please enter your password"])
             
         return cleaned_data
 
@@ -55,12 +55,12 @@ class MemberSignupForm1(forms.ModelForm):
         
         address = cleaned_data.get("address")
         dob = cleaned_data.get("dob")
-        
+                
         if not address:
-            self._errors["address"] = self.error_class(["Please enter your address."])
+            self._errors["address"] = self.error_class(["Please enter your address"])
         
         if not dob:
-            self._errors["dob"] = self.error_class(["Please enter your birth-date."])
+            self._errors["dob"] = self.error_class(["Please enter your birth date"])
             
         return cleaned_data
         
@@ -87,22 +87,26 @@ class MemberSignupForm2(forms.Form):
         username = cleaned_data.get("username")
         password = cleaned_data.get("password")
         repassword = cleaned_data.get("repassword")
-        firstname = cleaned_data.get("first_name")
+        first_name = cleaned_data.get("first_name")
         
         if not email:
-            self._errors["email"] = self.error_class(["Please enter your email address for communication. It will never be shared/published."])
+            self._errors["email"] = self.error_class(["Please enter your email address for communication. It will never be shared/published"])
             
         if not username:
-            self._errors["username"] = self.error_class(["Please enter your username."])
+            self._errors["username"] = self.error_class(["Please enter your username"])
             
         if not password:
-            self._errors["password"] = self.error_class(["Please enter your password."])
-            
+            self._errors["password"] = self.error_class(["Please enter your password"])
+        
+        if not repassword:
+            self._errors["repassword"] = self.error_class(["Please enter the same password again"])
+        
+        
         if not password == repassword:
-            self._errors["repassword"] = self.error_class(["Entered passwords do not match."])
+            self._errors["repassword"] = self.error_class(["Entered passwords do not match"])
             
-        if not firstname:
-            self._errors["firstname"] = self.error_class(["Please enter your first-name for external communication. It will never be shared/published."])
+        if not first_name:
+            self._errors["first_name"] = self.error_class(["Please enter your first name for external communication. It will never be shared/published"])
             
         return cleaned_data
 
@@ -124,14 +128,18 @@ class PostNewGrievanceForm1(forms.ModelForm):
     def clean(self):
         cleaned_data = super(PostNewGrievanceForm1, self).clean()
         
+        title = cleaned_data.get("title")
         statement = cleaned_data.get("statement")
         status = cleaned_data.get("status")
         
+        if not title:
+            self._errors["title"] = self.error_class(["Please enter the title of your grievance"])
+        
         if not statement:
-            self._errors["statement"] = self.error_class(["Please describe your grievance so our experts can sort(you)out !!!"])
+            self._errors["statement"] = self.error_class(["Please describe your grievance"])
             
         if not status:
-            self._errors["status"] = self.error_class(["Please enter a visibility scope for your grievance."])
+            self._errors["status"] = self.error_class(["Please enter a visibility scope for your grievance"])
             
         return cleaned_data
 
@@ -161,7 +169,7 @@ class PostNewGrievanceForm2(forms.Form):
         category = cleaned_data.get("category")
         
         if not category:
-            self._errors["category"] = self.error_class(["Please enter at least 1 (maximum 5) suitable/applicable category."])
+            self._errors["category"] = self.error_class(["Please enter at least 1 (maximum 5) suitable/applicable category"])
             
         return cleaned_data
 #         CHOICES = (('1', 'Very Low',), ('2', 'Low',), ('3', 'Moderate',), ('4', 'High',), ('5', 'Very High',))
@@ -183,7 +191,7 @@ class PostInterimGrievanceForm(forms.Form):
         statement = cleaned_data.get("statement")
         
         if not statement:
-            self._errors["statement"] = self.error_class(["Please describe your grievance so our experts can sort(you)out !!!"])
+            self._errors["statement"] = self.error_class(["Please describe your grievance"])
             
         return cleaned_data
 
@@ -202,7 +210,7 @@ class SolutionForm(forms.ModelForm):
         statement = cleaned_data.get("statement")
         
         if not statement:
-            self._errors["statement"] = self.error_class(["Please describe your solution so that you can help us sort(it)out !!!"])
+            self._errors["statement"] = self.error_class(["Please describe your solution"])
             
         return cleaned_data
 
@@ -218,6 +226,15 @@ class SolutionFeedbackForm(forms.ModelForm):
             'status': forms.RadioSelect(choices=CHOICES)
         }
     
+    def clean(self):
+        cleaned_data = super(SolutionFeedbackForm, self).clean()
+        
+        status = cleaned_data.get("status")
+        
+        if not status:
+            self._errors["status"] = self.error_class(["Please select the satisfaction level"])
+            
+        return cleaned_data
 ##################################################################################################################        
 class VisitorForm(forms.ModelForm):
     first_name = forms.CharField(max_length=30, required=False, initial='Anonymous')

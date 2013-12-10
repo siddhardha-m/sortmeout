@@ -103,10 +103,10 @@ def get_grievances(scope, searchString, categories, mId, member):
         
         # category based string search
         else:                       
-            grievances = list(Grievance.objects.search(searchString).extra(where=["status & 16 = 0"])).filter(level=0)
+            grievances = list(Grievance.objects.search(searchString).extra(where=["status & 16 = 0"]).filter(level=0))
             if (keys is not None) and (len(keys) > 0):
                 for key in keys:
-                    tempGrievances = list(Grievance.objects.search(key).extra(where=["status & 16 = 0"])).filter(level=0)
+                    tempGrievances = list(Grievance.objects.search(key).extra(where=["status & 16 = 0"]).filter(level=0))
                     for tempGrievance in tempGrievances:
                         grievanceSet = set(grievances)
                         if not tempGrievance in grievanceSet:
@@ -170,7 +170,8 @@ def get_grievances(scope, searchString, categories, mId, member):
                     if maxRelevantExpertiseLevel < expertise.level:
                         maxRelevantExpertiseLevel = expertise.level
         
-        relevantExpertiseClause = "(status & 224) <= " + str(32 * maxRelevantExpertiseLevel)        
+        relevantExpertiseClause = "(status & 224) <= " + str(32 * maxRelevantExpertiseLevel)
+        openGrievancesClause = "(status & 3) = 1"       
 #                 for category in categories:
 #                     if expertise.cat == category.pk:
 #                         relevantExpertises.append(category.pk)
@@ -182,22 +183,22 @@ def get_grievances(scope, searchString, categories, mId, member):
                                           
         # no search
         if (not isCategorySearch) and (not isStringSearch):
-            return Grievance.objects.filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).order_by("-creation_tstmp").distinct()
+            return Grievance.objects.filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).extra(where=[openGrievancesClause]).order_by("-creation_tstmp").distinct()
         
         # category search
         elif isCategorySearch and (not isStringSearch):
-            return Grievance.objects.filter(cats__in=categories, pk__in=grIds).extra(where=[relevantExpertiseClause]).order_by("-creation_tstmp").distinct()
+            return Grievance.objects.filter(cats__in=categories, pk__in=grIds).extra(where=[relevantExpertiseClause]).extra(where=[openGrievancesClause]).order_by("-creation_tstmp").distinct()
 
         # string search
         elif isStringSearch and (not isCategorySearch):
-            return Grievance.objects.search(searchString).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).distinct()
+            return Grievance.objects.search(searchString).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).extra(where=[openGrievancesClause]).distinct()
         
         # category based string search
         else:            
-            grievances = list(Grievance.objects.search(searchString).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).distinct())
+            grievances = list(Grievance.objects.search(searchString).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).extra(where=[openGrievancesClause]).distinct())
             if (keys is not None) and (len(keys) > 0):
                 for key in keys:
-                    tempGrievances = list(Grievance.objects.search(key).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).distinct())
+                    tempGrievances = list(Grievance.objects.search(key).filter(pk__in=grIds).extra(where=[relevantExpertiseClause]).extra(where=[openGrievancesClause]).distinct())
                     for tempGrievance in tempGrievances:
                         grievanceSet = set(grievances)
                         if not tempGrievance in grievanceSet:

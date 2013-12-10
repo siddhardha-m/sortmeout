@@ -23,9 +23,10 @@ def thankyou(request):
 ##################################################################################################################
 def logout_view(request):
     logout(request)
-    loginform = MemberLoginForm()
-    dictionary = add_csrf(request, form=loginform)
-    return HttpResponseRedirect('/signin/')
+    return HttpResponseRedirect(reverse('sortmeout.views.login_view'))
+#     loginform = MemberLoginForm()
+#     dictionary = add_csrf(request, form=loginform)
+#     return HttpResponseRedirect('/signin/')
 #     return render_to_response('index.html', dictionary)
 
 ##################################################################################################################
@@ -58,7 +59,7 @@ def login_view(request):
                 user = authenticate(username = username, password = password)
             
                 if user is None:
-                    loginform._errors["username"] = loginform.error_class(["Oops!!! Could not log(you)in. Please check your login credentials."])
+                    loginform._errors["username"] = loginform.error_class(["Oops!!! Could not log(you)in. Please check your login credentials"])
             
                 else:
                     if user.is_active:
@@ -89,7 +90,7 @@ def login_view(request):
 #                             return all_grievances_view(request, scope="expert_forum")
                             
                     else:
-                        loginform._errors["username"] = loginform.error_class(["Oops!!! Could not log(you)in. Please check your login credentials."])
+                        loginform._errors["username"] = loginform.error_class(["Oops!!! Could not log(you)in. Please check your login credentials"])
 #                         raise loginform.ValidationError("Oops! Could not log(you)in. Your account has been disabled.")
     
     dictionary = add_csrf(request, form=loginform, mId=mId, member=member, disableLogin=True)

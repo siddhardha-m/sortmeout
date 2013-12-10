@@ -8,6 +8,7 @@ from django.db import models, connection
 from django.db.models.fields.related import ForeignKey
 from django.contrib.auth.models import User
 from django.utils.datetime_safe import datetime
+from django.db.models import Q
 # net stop MySQLRK_1
 # net start MySQLRK_1
 ##################################################################################################################
@@ -74,6 +75,9 @@ class Member(models.Model):
         
     def set_member(self):       # reset bit 0 = 0, bit 1 = 0 and bit 2 = 0
         self.status = self.status & (~7)
+        
+        print "%s set as member." % self.user.username
+        
         return self.status
         
     def is_expert(self):        # is bit 0 = 1, bit 1 = 0 and bit 2 = 0
@@ -85,6 +89,9 @@ class Member(models.Model):
     def set_expert(self):       # set bit 0 = 1 and reset bit 1 = 0 and bit 2 = 0
         self.status = self.status | 1
         self.status = self.status & (~6)
+        
+        print "%s set as expert." % self.user.username
+        
         return self.status
  
 ##################################################################################################################           
@@ -92,7 +99,15 @@ class Expertise(models.Model):
     ex = ForeignKey('Member')
     cat = ForeignKey('Category')
     level = models.IntegerField(default=0)
-    expertise = models.IntegerField(default=0)            
+    expertise = models.IntegerField(default=0)
+    
+    def gain_expertise(self, inc):
+        self.expertise += inc
+        self.save()
+        
+        print "Awarded expertise %d to %s", (inc, self.ex.user.username)
+        
+        return self.expertise            
  
 ##################################################################################################################          
 class Category(models.Model):
@@ -142,12 +157,13 @@ class Grievance(models.Model):
 #         return Grievance.objects.filter(ath=self.ath)
 
     def update_selected_solution(self, newlyRatedSolution):
-        if newlyRatedSolution is not None and (self.fnl_sl is None or newlyRatedSolution.get_satisfaction_rating() >= self.fnl_sl.get_satisfaction_rating()):
+        if newlyRatedSolution is not None and (self.fnl_sl is None or not newlyRatedSolution.is_rated() or newlyRatedSolution.get_satisfaction_rating() >= self.fnl_sl.get_satisfaction_rating()):
             if self.fnl_sl is not None:
                 self.fnl_sl.set_not_selected()
                 self.fnl_sl.save()
             
             self.fnl_sl = newlyRatedSolution
+            print "Grievance#%d trying solution#%d." % (self.pk, self.fnl_sl.pk)
             
         self.set_solution_selected()
         self.save()
@@ -183,7 +199,27 @@ class Grievance(models.Model):
         self.status = self.status & (~1)
         self.status = self.status | 2
         
+        try:
+            if self.fnl_sl is not None and self.fnl_sl.ath is not None and self.fnl_sl.ath.is_expert():
+                selected_grs = Grievance.objects.filter(Q(id=self.pk) | Q(prnt_gr=self)).order_by('-level')
+                selected_gr = selected_grs[0]
+                
+                relevantGriscats = Griscat.objects.filter(gr=self).distinct()
+                if relevantGriscats is not None and len(relevantGriscats) > 0:
+                    relevantCategories = relevantGriscats.values_list('cat', flat=True)
+                    
+                    expertises = Expertise.objects.filter(ex=selected_gr.fnl_sl.ath, cat__in=relevantCategories)
+                    for expertise in expertises:
+                        expertise.gain_expertise(selected_gr.fnl_sl.get_satisfaction_rating())
+                        
+        except Exception, e:
+            print "Failed to award closing expertise. Caught: ", e
+            
         self.resolution_tstmp = datetime.now()
+        print "Grievance#%d closed by author." % self.pk
+        
+        if self.fnl_sl is not None and self.fnl_sl.is_rated():
+            self.set_solution_finalized()
         
         return self.status
         
@@ -195,6 +231,7 @@ class Grievance(models.Model):
         
     def set_declined_by_moderator(self):# set bit 0 = 1 and set bit 1 = 1
         self.status = self.status | 3
+        print "Grievance#%d declined by moderator." % self.pk
         return self.status
         
 #     def is_awaiting_solutions(self):    # is bit 2 = 0
@@ -216,8 +253,22 @@ class Grievance(models.Model):
     def set_solution_finalized(self):   # set bit 2 = 1
         self.status = self.status | 4
         
+        thisLvlSolutions = Solution.objects.none()
+        if self.prnt_gr is not None:
+            thisLvlSolutions = Solution.objects.filter(Q(gr=self) | Q(gr=self.prnt_gr)).filter(level=self.level)
+        else:
+            thisLvlSolutions = Solution.objects.filter(gr=self).filter(level=self.level)
+        
+        for thisLvlSolution in thisLvlSolutions:
+            if thisLvlSolution.get_satisfaction_rating() > self.fnl_sl.get_satisfaction_rating():
+                if self.fnl_sl.is_selected():
+                    self.fnl_sl.set_not_selected()
+                self.fnl_sl = thisLvlSolution
+        
         self.fnl_sl.set_finalized()
         self.fnl_sl.save()
+        
+        print "Grievance#%d finalized solution#%d" % (self.pk, self.fnl_sl.pk)
         
         return self.status
          
@@ -229,6 +280,8 @@ class Grievance(models.Model):
         
     def set_solution_selected(self):    # set bit 3 = 1
         self.status = self.status | 8
+        
+        print "Grievance#%d selected solution#%d" % (self.pk, self.fnl_sl.pk)
         
         self.fnl_sl.set_selected()
         self.fnl_sl.save()
@@ -250,6 +303,12 @@ class Grievance(models.Model):
         
     def set_public(self):               # reset bit 4 = 0
         self.status = self.status & (~16)
+        
+        if self.pk is not None:
+            print "Grievance#%d set as public." % self.pk
+        else:
+            print "New grievance set as public."
+        
         return self.status
         
     def is_private(self):               # is bit 4 = 1
@@ -260,11 +319,23 @@ class Grievance(models.Model):
         
     def set_private(self):              # set bit 4 = 1
         self.status = self.status | 16
+        
+        if self.pk is not None:
+            print "Grievance#%d set as private." % self.pk
+        else:
+            print "New grievance set as private."
+        
         return self.status
     
     def set_depth_of_understanding(self, value):        # set status in bits 8,7,6
         if value > 0 and value <= 5:                    # 8   7  6  5  4 3 2 1
             self.status = self.status | (value * 32)    # 128 64 32 16 8 4 2 1
+            
+            if self.pk is not None:
+                print "Grievance#%d demands expertise level %d." % (self.pk, value)
+            else:
+                print "New grievance demands expertise level %d." % value
+            
         return self.status
     
     def get_depth_of_understanding(self):               # get rating value from bits 7,6,5
@@ -305,10 +376,16 @@ class Solution(models.Model):
         
     def set_selected(self):         # set bit 0 = 1
         self.status = self.status | 1
+        
+        print "Solution#%d selected." % self.pk
+        
         return self.status
     
     def set_not_selected(self):     # reset bit 0 = 0
         self.status = self.status & (~1)
+        
+        print "Solution#%d un-selected." % self.pk
+        
         return self.status
         
     def is_finalized(self):         # is bit 1 = 1
@@ -319,16 +396,37 @@ class Solution(models.Model):
         
     def set_finalized(self):        # set bit 1 = 1
         self.status = self.status | 2
+        
+        print "Solution#%d finalized." % self.pk
+        
         return self.status
     
     def set_not_finalized(self):    # reset bit 1 = 0
         self.status = self.status & (~2)
+        
+        print "Solution#%d un-finalized." % self.pk
+        
         return self.status
     
     def set_satisfaction_rating(self, value):  # set status in bits 4,3,2
         if value > 0 and value <= 5:
             self.status = self.status | (value  * 4) 
+            print "Solution#%d rated %d." % (self.pk, value)
             self.set_not_selected()
+            
+            try:
+                if self.ath is not None and self.ath.is_expert():
+                    relevantGriscats = Griscat.objects.filter(gr=self.gr).distinct()
+                    if relevantGriscats is not None and len(relevantGriscats) > 0:
+                        relevantCategories = relevantGriscats.values_list('cat', flat=True)
+                    
+                        expertises = Expertise.objects.filter(ex=self.ath, cat__in=relevantCategories)
+                        for expertise in expertises:
+                            expertise.gain_expertise(value)
+                            
+            except Exception, e:
+                print "Failed to award trial expertise. Caught: ", e
+            
         return self.status
     
     def get_satisfaction_rating(self):          # get rating value from bits 4,3,2

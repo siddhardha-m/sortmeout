@@ -88,7 +88,7 @@ def signup_view(request, signuptype='member'):
                     
                     levels = []
                     if categories is None or len(categories) == 0:
-                        signupform3._errors["category"] = signupform3.error_class(["Please enter suitable categories of your expertise."])
+                        signupform3._errors["category"] = signupform3.error_class(["Category does not exist. Please enter suitable categories of your expertise"])
                         isValidExpertSignupForm = False
                     else:
                         pattern = re.compile('\s*,\s*')
@@ -134,8 +134,12 @@ def signup_view(request, signuptype='member'):
                             newMember.save()
                             
                             for i in range(len(categories)):
-                                newExpertise = Expertise(ex=newMember, cat=categories[i], level=levels[i], expertise=0)
-                                newExpertise.save()
+                                try:
+                                    newExpertise = Expertise(ex=newMember, cat=categories[i], level=levels[i], expertise=0)
+                                    newExpertise.save()
+                                    print "%s has expertise %s level %d." % (newMember.user.username, categories[i], levels[i])
+                                except:
+                                    print "%s failed to add expertise %s level %d." % (newMember.user.username, categories[i], levels[i])
                             
                         print("Created new %s :%s_%s: mId#%d" % (signuptype, newMember.user.first_name, newMember.user.last_name, newMember.user.id))
 #                         HttpResponseRedirect('/signin/')
@@ -149,10 +153,10 @@ def signup_view(request, signuptype='member'):
                 
                 except IntegrityError,e:
                     #raise signupform2.ValidationError('The username of your choice is unavailable. Please choose a different one.')
-                    signupform2._errors["username"] = signupform2.error_class(["Oops!!! Cannot sign(you)up with this username. Please select a different one."])
+                    signupform2._errors["username"] = signupform2.error_class(["Oops!!! Cannot sign(you)up with this username. Please select a different one"])
                 
                 except Exception,e :
-                    signupform2._errors["username"] = signupform2.error_class(["Oops!!! Failed to sign(you)up. Please try again later."])
+                    signupform2._errors["username"] = signupform2.error_class(["Oops!!! Failed to sign(you)up. Please try again later"])
                     print "Caught:", e
         
     request.session.flush()
@@ -258,7 +262,7 @@ def post_new_grievance_view(request):
                     visibility = postNewGrievanceForm1.cleaned_data["status"]
                     
                     if categories is None or len(categories) == 0:
-                        postNewGrievanceForm2._errors["category"] = postNewGrievanceForm2.error_class(["Please enter a suitable category for the grievance."])
+                        postNewGrievanceForm2._errors["category"] = postNewGrievanceForm2.error_class(["Please enter a suitable category for the grievance"])
                     
                     else:
                         try:
@@ -269,7 +273,7 @@ def post_new_grievance_view(request):
                                 newGrievance.set_private()
                             else:                           # Grievance visibility set to public
                                 newGrievance.set_public()
-                                
+                            
                             try:
                                 newGrievance.set_depth_of_understanding(int(expertiseSought))
 #                                 temp = newGrievance.get_depth_of_understanding()
@@ -282,14 +286,14 @@ def post_new_grievance_view(request):
                                 newGrisCat.save() 
                     
                             if newGrievance.pk:
-                                print("New grievance grId#%d from mId#%d" % (newGrievance.pk, mId))
+                                print("New grievance grId#%d from mId#%d" % (newGrievance.id, mId))
                                 return HttpResponseRedirect(reverse('members.views.all_grievances_view', args=['private_forum', ]))
                             
                             else:
-                                postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Could not register your grievance. Please try again later."])
+                                postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Could not register your grievance. Please try again later"])
                             
                         except Exception, e:
-                            postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Failed to register your grievance. Please try again later."])
+                            postNewGrievanceForm1._errors["title"] = postNewGrievanceForm1.error_class(["Oops!!! Failed to register your grievance. Please try again later"])
                             print "Caught:", e
             
         dictionary = add_csrf(request, form1=postNewGrievanceForm1, form2=postNewGrievanceForm2, mId=mId, member=member)
@@ -392,6 +396,7 @@ def grievance_view(request, grId, slId):
                         selected_sl.set_not_selected()
                         selected_sl.save()
                         print "New closable grievance identified at level %d." % (closable_lvl)
+                        return HttpResponseRedirect(reverse('members.views.grievance_view', args=[grId, 0, ]))
             except:
                 print "Session does not contain a selected solution."
                 
@@ -404,11 +409,11 @@ def grievance_view(request, grId, slId):
                 selected_sl.gr.save()
                     
             elif keypress == 'submitrevisedgrievance':
-                if closable_gr is not None:
-                    closable_gr.set_solution_finalized()
-                    closable_gr.save()
-                
                 if interimGrievanceForm.is_valid():
+                    if closable_gr is not None:
+                        closable_gr.set_solution_finalized()
+                        closable_gr.save()
+                    
                     statement = interimGrievanceForm.cleaned_data["statement"]
                         
                     interimGrievance = Grievance(prnt_gr=grievance, ath=member, statement=statement, status=0, level=closable_lvl+1, creation_tstmp=datetime.now())
