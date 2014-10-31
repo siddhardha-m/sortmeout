@@ -6,7 +6,7 @@ TEMPLATE_DEBUG = DEBUG
 import os.path 
 
 ADMINS = (
-    # ('Rohit Khapare', 'rkhapare@indiana.edu'),
+    # ('Siddhardha M', 'siddhardha.m@outlook.com'),
 )
 
 MANAGERS = ADMINS
@@ -14,9 +14,9 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'b561f13_rkhapare',           # Or path to database file if using sqlite3.
-        'USER': 'b561f13_rkhapare',           # Not used with sqlite3.
-        'PASSWORD': 'mysql',                  # Not used with sqlite3.
+        'NAME': 'sortmeout',           # Or path to database file if using sqlite3.
+        'USER': 'sortmeout_dbuser',           # Not used with sqlite3.
+        'PASSWORD': 'sortmeoutdbuserpwd',                  # Not used with sqlite3.
         'HOST': '127.0.0.1',                  # Set to empty string for localhost. Not used with sqlite3.
         'PORT': '3306',                       # Set to empty string for default. Not used with sqlite3.
     }

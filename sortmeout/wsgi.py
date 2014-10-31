@@ -15,10 +15,10 @@ framework.
 """
 import os, sys
 
-sys.path.append('/u/rkhapare/dev')
-sys.path.append('/u/rkhapare/prj')
-sys.path.append('/u/rkhapare/prj/sortmeout')
-sys.path.append('/u/rkhapare/lib/python2.6/site-packages')
+sys.path.append('/u/siddhardha/dev')
+sys.path.append('/u/siddhardha/prj')
+sys.path.append('/u/siddhardha/prj/sortmeout')
+sys.path.append('/u/siddhardha/lib/python2.6/site-packages')
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "sortmeout.settings")
 
 # This application object is used by any WSGI server configured to use this

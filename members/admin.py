@@ -1,7 +1,7 @@
 '''
 Created on Sep 25, 2013
 
-@author: rkhapare
+@author: siddhardha
 '''
 ##################################################################################################################
 from django.contrib import admin
